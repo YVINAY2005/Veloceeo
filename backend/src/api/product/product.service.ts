@@ -1,5 +1,5 @@
 // src/api/product/product.service.ts
-import { prisma } from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import AppError from '../../utils/AppError';
 
 interface ProductImageInput {
@@ -50,7 +50,7 @@ export const createProduct = async (input: CreateProductInput, sellerId?: string
     if (!category) throw new AppError('Category not found', 404);
   }
 
-  const product = await prisma.$transaction(async (tx) => {
+  const product = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const p = await tx.product.create({
       data: {
         store_id: input.store_id,
@@ -331,7 +331,7 @@ export const updateProductStock = async (id: number, quantity: number, sellerId?
   const product = await prisma.product.findUnique({ where: { id } });
   if (!product) throw new AppError('Product not found', 404);
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const updated = await tx.product.update({
       where: { id },
       data: { stock_quantity: quantity },
@@ -382,7 +382,7 @@ export const updateProduct = async (id: number, data: Partial<CreateProductInput
   if (data.brand !== undefined) updateData.brand = data.brand;
   if ((data as any).is_active !== undefined) updateData.is_active = (data as any).is_active;
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // If images are provided, replace them
     if (data.images) {
       if (data.images.length === 0) {
@@ -434,7 +434,7 @@ export const deleteProduct = async (id: number, sellerId?: string) => {
   const product = await prisma.product.findUnique({ where: { id } });
   if (!product) throw new AppError('Product not found', 404);
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     await tx.product.delete({ where: { id } });
 
     // Log the action

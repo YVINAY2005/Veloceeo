@@ -1,5 +1,5 @@
 // src/api/seller/seller.service.ts
-import { prisma } from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -43,7 +43,7 @@ export const signupService = async (payload: any) => {
   const friendlyId = `${business_name.replace(/\s+/g, "_").toLowerCase()}_${Date.now().toString().slice(-5)}`;
 
   try {
-    const seller = await prisma.$transaction(async (tx) => {
+    const seller = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const s = await tx.seller.create({
         data: {
           id: friendlyId,      // ⭐ now explicitly providing ID
@@ -250,7 +250,7 @@ export const createStoreService = async (sellerId: string, payload: any) => {
   const existing = await prisma.store.findUnique({ where: { slug } });
   if (existing) throw new AppError('Store slug already exists', 409);
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const store = await tx.store.create({
       data: {
         seller_id: sellerId,
@@ -321,7 +321,7 @@ export const createProductService = async (sellerId: string, payload: any) => {
   if (existingSlug) throw new AppError('Product with this slug already exists', 409);
 
   // create product
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const product = await tx.product.create({
       data: {
         store_id: store.id,
@@ -409,7 +409,7 @@ export const updateProductService = async (sellerId: string, productId: number, 
     };
   }
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const updated = await tx.product.update({ where: { id: Number(productId) }, data });
 
     // Audit log
@@ -436,7 +436,7 @@ export const deleteProductService = async (sellerId: string, productId: number) 
   const store = await prisma.store.findUnique({ where: { id: product.store_id } });
   if (!store || store.seller_id !== sellerId) throw new AppError('Forbidden: not your product', 403);
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // We'll do a hard delete as per general "delete" expectations in this project
     // But first delete related records like reviews and cart items
     await tx.cartItem.deleteMany({ where: { product_id: Number(productId) } });

@@ -1,5 +1,5 @@
 // src/api/customer/customer.service.ts
-import { prisma } from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -18,7 +18,7 @@ export const signupService = async (payload: any) => {
 
   const hashed = await bcrypt.hash(password, 12);
 
-  const customer = await prisma.$transaction(async (tx) => {
+  const customer = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const c = await tx.customer.create({
       data: {
         email,
@@ -242,7 +242,7 @@ export const createOrderService = async (userId: number, payload: any) => {
   }
 
   // 🔥 seller_id is now String (no conversion needed)
-  const payment = await prisma.$transaction(async (tx) => {
+  const payment = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const p = await tx.payment.create({
       data: {
         customer_id: userId,

@@ -1,5 +1,5 @@
 // src/api/admin/admin.service.ts
-import { prisma } from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -23,7 +23,7 @@ export const signupService = async (payload: any) => {
 
   const hashed = await bcrypt.hash(payload.password, 12);
 
-  const admin = await prisma.$transaction(async (tx) => {
+  const admin = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const a = await tx.admin.create({
       data: {
         email: payload.email,
@@ -132,7 +132,7 @@ export const createSellerService = async (payload: any, adminId?: number) => {
   const hashed = await bcrypt.hash(payload.password, 12);
 
   try {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // 1. Check for duplicate email
       const existingEmail = await tx.seller.findUnique({ where: { email: payload.email } });
       if (existingEmail) {
@@ -256,7 +256,7 @@ export const updateSellerService = async (id: string, payload: any, adminId?: nu
     allowed.password = await bcrypt.hash(payload.password, 12);
   }
 
-  return await prisma.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const seller = await tx.seller.update({ where: { id }, data: allowed });
 
     if (adminId) {
@@ -267,7 +267,7 @@ export const updateSellerService = async (id: string, payload: any, adminId?: nu
           entity_id: id,
           admin_id: adminId,
           details: { 
-            fields_updated: Object.keys(allowed).filter(k => k !== 'password'),
+            fields_updated: Object.keys(allowed).filter((k: string) => k !== 'password'),
             business_name: seller.business_name 
           },
         },
@@ -295,11 +295,11 @@ export const deleteSellerService = async (id: string, adminId: number) => {
 
   console.log(`✅ [SERVICE] Found seller: ${seller.email}. Proceeding with deletion.`);
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Manually delete dependent records to ensure no foreign key violations
     // Some relations might not have Cascade at the DB level even if defined in Prisma
     
-    const storeIds = seller.stores.map(s => s.id);
+    const storeIds = seller.stores.map((s: any) => s.id);
     
     if (storeIds.length > 0) {
       // 1. Delete all cart items related to products of these stores
