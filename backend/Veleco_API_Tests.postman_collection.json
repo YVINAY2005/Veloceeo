@@ -1,0 +1,689 @@
+{
+  "info": {
+    "name": "Veleco API Tests (Final)",
+    "description": "Complete test suite covering Auth, Admin Dashboard, Sellers, Stores, Products (inc. Stock), Cart, Payments, Support (inc. Messages), and Bank Accounts.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Customer",
+      "description": "Auth, Profile, and Order management for Customers",
+      "item": [
+        {
+          "name": "Signup Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/customer/signup",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer1@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Customer One\",\n  \"phone\": \"9999999999\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/customer/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"customer1@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/customer/logout"
+          }
+        },
+        {
+          "name": "Get Profile (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "url": "{{base_url}}/api/customer/me"
+          }
+        },
+        {
+          "name": "Update Profile (Me)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/customer/me",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"9876543210\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/customer/orders/create",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    { \"productId\": 1, \"quantity\": 2 }\n  ],\n  \"shippingAddress\": {\n    \"line1\": \"123 Main St\",\n    \"city\": \"Mumbai\",\n    \"state\": \"MH\",\n    \"zip\": \"400001\"\n  },\n  \"paymentMethod\": \"razorpay\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" }
+            ],
+            "url": "{{base_url}}/api/customer/orders/{{order_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Seller Auth",
+      "item": [
+        {
+          "name": "Signup Seller",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/seller/signup",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"seller1@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Seller One\",\n  \"business_name\": \"TechWorld\",\n  \"gst_number\": \"GST123456\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login Seller",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/seller/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"seller1@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout Seller",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/seller/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Auth",
+      "item": [
+        {
+          "name": "Login Admin (RESTRICTED EMAIL)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{base_url}}/api/admin/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"veloceo69@gmail.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/admin/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Dashboard",
+      "description": "Seller Management and Analytics",
+      "item": [
+        {
+          "name": "Create Seller (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/admin/sellers",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin_created_seller@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Admin Created Seller\",\n  \"business_name\": \"Admin Ventures\",\n  \"gst_number\": \"GST999999\",\n  \"is_verified\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "List All Sellers (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{base_url}}/api/admin/sellers"
+          }
+        },
+        {
+          "name": "Get Seller By ID (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{base_url}}/api/admin/sellers/{{target_seller_id}}"
+          }
+        },
+        {
+          "name": "Update Seller (Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/admin/sellers/{{target_seller_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_verified\": true,\n  \"is_active\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Seller (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{base_url}}/api/admin/sellers/{{target_seller_id}}"
+          }
+        },
+        {
+          "name": "Get Analytics (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{base_url}}/api/admin/analytics"
+          }
+        },
+        {
+          "name": "Get All Orders (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{base_url}}/api/admin/orders"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stores",
+      "description": "Store Management (Seller/Public)",
+      "item": [
+        {
+          "name": "Create Store (Seller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/store",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"TechWorld\",\n  \"slug\": \"techworld\",\n  \"description\": \"Your one-stop electronics shop\",\n  \"city\": \"Mumbai\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List My Stores (Seller)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" }
+            ],
+            "url": "{{base_url}}/api/store"
+          }
+        },
+        {
+          "name": "Get Store by ID (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/store/{{store_id}}"
+          }
+        },
+        {
+          "name": "Update Store (Seller)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/store/{{store_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description of the store.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Store (Seller)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" }
+            ],
+            "url": "{{base_url}}/api/store/{{store_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "description": "Product Management and Search",
+      "item": [
+        {
+          "name": "Create Product (Seller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/product",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"storeId\": {{store_id}},\n  \"name\": \"Wireless Mouse\",\n  \"slug\": \"wireless-mouse\",\n  \"sku\": \"WM123\",\n  \"description\": \"High precision wireless mouse\",\n  \"price_cents\": 1500,\n  \"stock_quantity\": 20\n}"
+            }
+          }
+        },
+        {
+          "name": "Search Products (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/product/search?name=mouse"
+          }
+        },
+        {
+          "name": "List Products by Store (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/product/store/{{store_id}}"
+          }
+        },
+        {
+          "name": "Get Product by ID (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/product/{{product_id}}"
+          }
+        },
+        {
+          "name": "Update Product (Seller)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/product/{{product_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price_cents\": 1800\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Stock (Seller)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/product/{{product_id}}/stock",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock_quantity\": 50\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Product (Seller)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/product/{{product_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "description": "Customer Cart Operations",
+      "item": [
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/cart/add",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": {{product_id}},\n  \"quantity\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Cart",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+            "url": "{{base_url}}/api/cart"
+          }
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+            "url": "{{base_url}}/api/cart/clear"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Initiate Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/payments/initiate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [{ \"productId\": {{product_id}}, \"qty\": 2 }],\n  \"shipping\": { \"name\": \"Customer One\", \"phone\": \"9999999999\", \"address\": \"Mumbai\" }\n}"
+            }
+          }
+        },
+        {
+          "name": "List My Payments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+            "url": "{{base_url}}/api/payments"
+          }
+        },
+        {
+          "name": "Razorpay Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "x-razorpay-signature", "value": "{{razorpay_signature}}" }
+            ],
+            "url": "{{base_url}}/api/payments/webhook",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"payment.captured\",\n  \"payload\": { }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Support Tickets",
+      "description": "Ticket management and messaging",
+      "item": [
+        {
+          "name": "Create Ticket (Customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/support",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Payment Issue\",\n  \"description\": \"I was charged but order status is pending.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List My Tickets",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+            "url": "{{base_url}}/api/support"
+          }
+        },
+        {
+          "name": "Get Ticket by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+            "url": "{{base_url}}/api/support/{{ticket_id}}"
+          }
+        },
+        {
+          "name": "Add Message (Conversation)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{customer_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/support/{{ticket_id}}/message",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Here is a screenshot of the error.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Status (Admin/Seller)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/support/{{ticket_id}}/status",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"RESOLVED\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Ticket (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": "{{base_url}}/api/support/{{ticket_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bank Accounts",
+      "description": "Seller Bank Management",
+      "item": [
+        {
+          "name": "Add Bank Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/bank",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bank_name\": \"HDFC Bank\",\n  \"account_number\": \"1234567890\",\n  \"ifsc_code\": \"HDFC0001234\",\n  \"is_primary\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "List Bank Accounts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{seller_token}}" }],
+            "url": "{{base_url}}/api/bank"
+          }
+        },
+        {
+          "name": "Get Primary Bank",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{seller_token}}" }],
+            "url": "{{base_url}}/api/bank/primary"
+          }
+        },
+        {
+          "name": "Get Bank Account by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{seller_token}}" }],
+            "url": "{{base_url}}/api/bank/{{bank_id}}"
+          }
+        },
+        {
+          "name": "Update Bank Account",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/bank/{{bank_id}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_primary\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Bank Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{seller_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/bank/{{bank_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Create Notification (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{base_url}}/api/notifications",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"title\": \"Test Notice\",\n  \"message\": \"This is a test notification\",\n  \"type\": \"system\"\n}"
+            }
+          }
+        },
+        {
+          "name": "List My Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+            "url": "{{base_url}}/api/notifications"
+          }
+        },
+        {
+          "name": "Mark Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+            "url": "{{base_url}}/api/notifications/1/read"
+          }
+        },
+        {
+          "name": "Mark All Read",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{customer_token}}" }],
+            "url": "{{base_url}}/api/notifications/read-all"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3000" },
+    { "key": "customer_token", "value": "" },
+    { "key": "seller_token", "value": "" },
+    { "key": "admin_token", "value": "" },
+    { "key": "razorpay_signature", "value": "" },
+    { "key": "store_id", "value": "1" },
+    { "key": "product_id", "value": "1" },
+    { "key": "target_seller_id", "value": "UUID" },
+    { "key": "order_id", "value": "1" },
+    { "key": "ticket_id", "value": "1" },
+    { "key": "bank_id", "value": "1" }
+  ]
+}

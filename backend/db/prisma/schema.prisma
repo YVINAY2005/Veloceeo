@@ -1,0 +1,370 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------- USER ENTITIES -------------------------
+
+model Customer {
+  id          Int     @id @default(autoincrement())
+  email       String  @unique
+  phone       String? @unique
+  password    String
+  name        String?
+  is_active   Boolean @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  password_reset_token    String? @map("passwordResetToken")
+  password_reset_expires  DateTime? @map("passwordResetExpires")
+
+  sessions    Session[]
+  cart        Cart?
+  payments    Payment[]
+  tickets     SupportTicket[]
+  reviews     Review[]
+  orders      Order[]
+}
+
+model Seller {
+  // Primary key is now String
+    id              String   @id // Friendly ID like "john_doe_12345" 
+  email         String  @unique
+  phone         String? @unique
+  password      String
+  name          String?
+  business_name String
+  gst_number    String? @unique
+  is_verified   Boolean @default(false)
+  is_active     Boolean @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  stores        Store[]
+  bank_accounts BankAccount[]
+  payments      Payment[]
+  tickets       SupportTicket[]
+  sessions      Session[]
+  audit_logs    AuditLog[]
+}
+
+model Admin {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  name        String?
+  is_super    Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  tickets     SupportTicket[]
+  sessions    Session[]
+  audit_logs  AuditLog[]
+}
+
+// ------------------------- SESSION -------------------------
+
+model Session {
+  id          Int      @id @default(autoincrement())
+  customer    Customer? @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customer_id Int?
+  seller      Seller?  @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  // FIX: Changed to String?
+  seller_id   String? 
+  admin       Admin?   @relation(fields: [admin_id], references: [id], onDelete: Cascade)
+  admin_id    Int?
+  session_id  String   @unique
+  ip_address  String?
+  user_agent  String?
+  expires_at  DateTime
+  created_at  DateTime @default(now())
+}
+
+// ------------------------- STORE & PRODUCTS -------------------------
+
+model Store {
+  id            Int      @id @default(autoincrement())
+  seller        Seller   @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  // FIX: Changed to String
+  seller_id     String 
+  name          String
+  slug          String   @unique
+  description   String?
+  address       String?
+  city          String?
+  state         String?
+  country       String?
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  products      Product[]
+  categories    Category[]
+
+  @@index([seller_id])
+  @@index([slug])
+}
+
+model Category {
+  id            Int        @id @default(autoincrement())
+  store         Store      @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  store_id      Int
+  name          String
+  slug          String     @unique
+  description   String?
+  parent_id     Int?
+  parent        Category?  @relation("SubCategories", fields: [parent_id], references: [id])
+  subcategories Category[] @relation("SubCategories")
+
+  products      Product[]
+
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+}
+
+model Product {
+  id              Int        @id @default(autoincrement())
+  store           Store      @relation(fields: [store_id], references: [id], onDelete: Cascade)
+  store_id        Int
+  category        Category?  @relation(fields: [category_id], references: [id], onDelete: SetNull)
+  category_id     Int?
+  name            String
+  slug            String     @unique
+  sku             String     @unique
+  description     String?
+  price_cents     Int
+  currency        String     @default("INR")
+  stock_quantity  Int        @default(0)
+  brand           String?
+  is_active       Boolean    @default(true)
+  averageRating   Float      @default(0)
+  totalRatings    Int        @default(0)
+  ratingBreakdown Json       @default("{\"1\": 0, \"2\": 0, \"3\": 0, \"4\": 0, \"5\": 0}")
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+  
+  images          ProductImage[]
+  reviews         Review[]
+  orderItems      OrderItem[]
+  cartItems       CartItem[]
+
+  @@index([store_id])
+  @@index([category_id])
+}
+
+// ------------------------- ORDERS -------------------------
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Order {
+  id              Int           @id @default(autoincrement())
+  customer        Customer      @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customer_id     Int
+  total_amount    Int           // Total in cents
+  status          OrderStatus   @default(PENDING)
+  payment_id      Int?          @unique
+  payment         Payment?      @relation(fields: [payment_id], references: [id])
+  created_at      DateTime      @default(now())
+  updated_at      DateTime      @updatedAt
+
+  items           OrderItem[]
+  reviews         Review[]
+
+  @@index([customer_id])
+  @@index([status])
+}
+
+model OrderItem {
+  id              Int      @id @default(autoincrement())
+  order           Order    @relation(fields: [order_id], references: [id], onDelete: Cascade)
+  order_id        Int
+  product         Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id      Int
+  quantity        Int
+  price_cents     Int      // Price at the time of purchase
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([order_id])
+  @@index([product_id])
+}
+
+// ------------------------- PRODUCT REVIEWS -------------------------
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id  Int
+  customer    Customer @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customer_id Int
+  order       Order?   @relation(fields: [order_id], references: [id], onDelete: SetNull)
+  order_id    Int?
+  rating      Int
+  review_text String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@unique([product_id, customer_id])
+  @@index([product_id])
+  @@index([customer_id])
+  @@index([order_id])
+}
+
+model ProductImage {
+  id            Int      @id @default(autoincrement())
+  product       Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id    Int
+  url           String
+  is_primary    Boolean  @default(false)
+  display_order Int      @default(0)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@index([product_id])
+}
+
+
+
+// ------------------------- CART -------------------------
+
+model Cart {
+  id          Int       @id @default(autoincrement())
+  customer    Customer  @relation(fields: [customer_id], references: [id], onDelete: Cascade)
+  customer_id Int       @unique
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  items       CartItem[]
+}
+
+model CartItem {
+  id          Int      @id @default(autoincrement())
+  cart        Cart     @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+  cart_id     Int
+  product     Product  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  product_id  Int
+  quantity    Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@unique([cart_id, product_id])
+}
+
+// ------------------------- PAYMENT -------------------------
+
+enum PaymentStatus {
+  INITIATED
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id                Int           @id @default(autoincrement())
+  customer          Customer?     @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+  customer_id       Int?
+  seller            Seller?       @relation(fields: [seller_id], references: [id], onDelete: SetNull)
+  // FIX: Changed to String?
+  seller_id         String? 
+  amount_cents      Int
+  currency          String        @default("INR")
+  provider          String        // e.g., "razorpay", "stripe"
+  provider_ref_id   String?
+  status            PaymentStatus @default(INITIATED)
+  metadata          Json?
+  created_at        DateTime      @default(now())
+  updated_at        DateTime      @updatedAt
+
+  order             Order?
+
+  @@index([provider])
+  @@index([status])
+  @@index([created_at])
+}
+
+// ------------------------- BANK DETAILS -------------------------
+
+model BankAccount {
+  id              Int      @id @default(autoincrement())
+  seller          Seller   @relation(fields: [seller_id], references: [id], onDelete: Cascade)
+  // FIX: Changed to String
+  seller_id       String 
+  bank_name       String
+  account_number  String
+  ifsc_code       String
+  is_primary      Boolean  @default(false)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@unique([seller_id, account_number])
+}
+
+// ------------------------- SUPPORT TICKET (Threaded Conversation in JSON) -------------------------
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model SupportTicket {
+  id            Int          @id @default(autoincrement())
+  customer      Customer?    @relation(fields: [customer_id], references: [id], onDelete: SetNull)
+  customer_id   Int?
+  seller        Seller?      @relation(fields: [seller_id], references: [id], onDelete: SetNull)
+  // FIX: Changed to String?
+  seller_id     String? 
+  admin         Admin?       @relation(fields: [admin_id], references: [id], onDelete: SetNull)
+  admin_id      Int?
+  subject       String
+  description   String       @db.Text
+  status        TicketStatus @default(OPEN)
+  priority      String?
+  conversation  Json?        // Array of { sender_type: "customer" | "seller" | "admin", message: string, timestamp: Date }
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  
+  user_id     String?  // 🔥 Changed from Int? to String? to support both numeric IDs and friendly IDs
+  role        String   // 'customer' | 'seller' | 'admin'
+
+  title       String
+  message     String
+  type        String   // 'email' | 'system'
+  
+  is_read     Boolean  @default(false)
+  created_at  DateTime @default(now())
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  action      String   // e.g., "CREATE_SELLER", "DELETE_SELLER", "CREATE_PRODUCT"
+  entity_type String   // e.g., "SELLER", "PRODUCT"
+  entity_id   String   // ID of the entity
+  admin_id    Int?
+  admin       Admin?   @relation(fields: [admin_id], references: [id], onDelete: SetNull)
+  seller_id   String?
+  seller      Seller?  @relation(fields: [seller_id], references: [id], onDelete: SetNull)
+  details     Json?    // Any additional details
+  created_at  DateTime @default(now())
+
+  @@index([action])
+  @@index([entity_type])
+  @@index([entity_id])
+}
