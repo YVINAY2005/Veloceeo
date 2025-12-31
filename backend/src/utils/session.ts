@@ -1,4 +1,5 @@
 // src/utils/session.ts
+import { Prisma } from '@prisma/client';
 import crypto from 'crypto';
 import { prisma } from '../lib/prisma';
 
@@ -15,15 +16,15 @@ export const createSession = async (payload: {
 }) => {
   const session_id = crypto.randomBytes(20).toString('hex');
   const expires_at = new Date(Date.now() + (payload.ttlMs ?? SESSION_TTL_MS));
-  const data: any = {
+  const data: Prisma.SessionCreateInput = {
     session_id,
     expires_at,
     ip_address: payload.ip ?? null,
     user_agent: payload.user_agent ?? null,
   };
-  if (payload.customer_id) data.customer_id = payload.customer_id;
-  if (payload.seller_id) data.seller_id = payload.seller_id;
-  if (payload.admin_id) data.admin_id = payload.admin_id;
+  if (payload.customer_id) data.customer = { connect: { id: payload.customer_id } };
+  if (payload.seller_id) data.seller = { connect: { id: payload.seller_id } };
+  if (payload.admin_id) data.admin = { connect: { id: payload.admin_id } };
 
   const session = await prisma.session.create({ data });
   return session;

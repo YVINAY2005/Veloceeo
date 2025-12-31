@@ -1,6 +1,7 @@
 // src/api/support/support.service.ts
 import AppError from '../../utils/AppError';
 import { prisma } from '../../lib/prisma';
+import { Prisma, TicketStatus } from '@prisma/client';
 
 export interface ConversationEntry {
   sender_type: 'customer' | 'seller' | 'admin';
@@ -47,7 +48,7 @@ export const addConversationMessage = async (ticketId: number, message: Conversa
 
   const updated = await prisma.supportTicket.update({
     where: { id: ticketId },
-    data: { conversation: conversation as any },
+    data: { conversation: conversation as unknown as Prisma.InputJsonValue },
   });
 
   return updated;
@@ -59,11 +60,11 @@ export const getTickets = async (filter?: {
   admin_id?: number;
   status?: string;
 }) => {
-  const where: any = {};
+  const where: Prisma.SupportTicketWhereInput = {};
   if (filter?.customer_id) where.customer_id = filter.customer_id;
-  if (filter?.seller_id) where.seller_id = filter.seller_id; // ✅ Already correct
+  if (filter?.seller_id) where.seller_id = filter.seller_id;
   if (filter?.admin_id) where.admin_id = filter.admin_id;
-  if (filter?.status) where.status = filter.status;
+  if (filter?.status) where.status = filter.status as TicketStatus;
 
   return prisma.supportTicket.findMany({
     where,

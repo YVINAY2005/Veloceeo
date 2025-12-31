@@ -1,5 +1,6 @@
 // src/api/admin/admin.service.ts
 import { prisma, Prisma } from '../../lib/prisma';
+import { PaymentStatus } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -9,6 +10,38 @@ import { createSession, SESSION_TTL_MS } from '../../utils/session';
 
 const ALLOWED_ADMIN_EMAIL = (process.env.ALLOWED_ADMIN_EMAIL || 'veloceo69@gmail.com').toLowerCase();
 
+interface AdminSignupPayload {
+  email: string;
+  password: string;
+  name?: string;
+}
+
+interface AdminLoginPayload {
+  email: string;
+  password: string;
+  ip?: string;
+  userAgent?: string;
+}
+
+interface CreateSellerPayload {
+  email: string;
+  password: string;
+  business_name: string;
+  name?: string;
+  phone?: string;
+  gst_number?: string;
+}
+
+interface UpdateSellerPayload {
+  name?: string;
+  phone?: string;
+  business_name?: string;
+  gst_number?: string;
+  is_verified?: boolean;
+  is_active?: boolean;
+  password?: string;
+}
+
 function signToken(sessionId: string, role: 'admin' | 'seller' | 'customer') {
   return jwt.sign({ session_id: sessionId, role }, config.JWT_SECRET as string, { expiresIn: '24h' });
 }
@@ -16,7 +49,7 @@ function signToken(sessionId: string, role: 'admin' | 'seller' | 'customer') {
 /**
  * Admin signup - creates an admin record (hashes password).
  */
-export const signupService = async (payload: any) => {
+export const signupService = async (payload: AdminSignupPayload) => {
   if (!payload?.email || !payload?.password) {
     throw new AppError('Email and password are required', 400);
   }
@@ -52,7 +85,7 @@ export const signupService = async (payload: any) => {
 /**
  * Admin login - ENFORCED: only allowed for ALLOWED_ADMIN_EMAIL
  */
-export const loginService = async (payload: any) => {
+export const loginService = async (payload: AdminLoginPayload) => {
   if (!payload?.email || !payload?.password) {
     throw new AppError('Email and password are required', 400);
   }
@@ -97,7 +130,7 @@ export const getMeService = async (id: number) => {
   return admin;
 };
 
-export const demoLoginService = async (payload?: any) => {
+export const demoLoginService = async (payload?: { ip?: string; userAgent?: string }) => {
   const email = `admin_${Date.now()}@example.com`;
   const hashed = await bcrypt.hash('demo', 8);
   const admin = await prisma.admin.create({
@@ -120,7 +153,7 @@ export const demoLoginService = async (payload?: any) => {
  * Admin should NOT create sellers - sellers self-register
  * This is kept for backward compatibility but should be deprecated
  */
-export const createSellerService = async (payload: any, adminId?: number) => {
+export const createSellerService = async (payload: CreateSellerPayload, adminId?: number) => {
   if (!payload?.email || !payload?.password || !payload?.business_name) {
     throw new AppError('Seller email, password and business_name are required', 400);
   }
@@ -193,7 +226,8 @@ export const createSellerService = async (payload: any, adminId?: number) => {
 
       return seller;
     });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     if (adminId) {
       await prisma.auditLog.create({
         data: {
@@ -204,9 +238,8 @@ export const createSellerService = async (payload: any, adminId?: number) => {
           details: { 
             email: payload.email, 
             business_name: payload.business_name,
-            error: error.message || 'Unknown error',
-            attempt_status: 'FAILED'
-          },
+            error: err.message 
+          } as Prisma.InputJsonValue,
         },
       });
     }
@@ -244,8 +277,8 @@ export const getSellerByIdService = async (id: string) => {
 /**
  * 🔥 FIXED: Seller ID is String
  */
-export const updateSellerService = async (id: string, payload: any, adminId?: number) => {
-  const allowed: any = {};
+export const updateSellerService = async (id: string, payload: UpdateSellerPayload, adminId?: number) => {
+  const allowed: Prisma.SellerUpdateInput = {};
   if (payload.name !== undefined) allowed.name = payload.name;
   if (payload.phone !== undefined) allowed.phone = payload.phone;
   if (payload.business_name !== undefined) allowed.business_name = payload.business_name;
@@ -299,7 +332,7 @@ export const deleteSellerService = async (id: string, adminId: number) => {
     // Manually delete dependent records to ensure no foreign key violations
     // Some relations might not have Cascade at the DB level even if defined in Prisma
     
-    const storeIds = seller.stores.map((s: any) => s.id);
+    const storeIds = seller.stores.map((s) => s.id);
     
     if (storeIds.length > 0) {
       // 1. Delete all cart items related to products of these stores
@@ -383,16 +416,29 @@ export const getAnalyticsService = async () => {
   };
 };
 
+interface GetOrdersFilters {
+  status?: string;
+  provider?: string;
+  from?: string | Date;
+  to?: string | Date;
+  page?: number | string;
+  limit?: number | string;
+}
+
 /**
  * Get payments (orders)
  */
-export const getOrdersService = async ({ status, provider, from, to, page = 1, limit = 50 }: any) => {
-  const where: any = {};
-  if (status) where.status = String(status);
+export const getOrdersService = async (filters: GetOrdersFilters = {}) => {
+  const { status, provider, from, to, page = 1, limit = 50 } = filters;
+  const where: Prisma.PaymentWhereInput = {};
+  if (status) where.status = status as PaymentStatus;
   if (provider) where.provider = String(provider);
-  if (from || to) where.created_at = {};
-  if (from) where.created_at.gte = new Date(String(from));
-  if (to) where.created_at.lte = new Date(String(to));
+  
+  if (from || to) {
+    where.created_at = {};
+    if (from) (where.created_at as Prisma.DateTimeFilter).gte = new Date(String(from));
+    if (to) (where.created_at as Prisma.DateTimeFilter).lte = new Date(String(to));
+  }
 
   const payments = await prisma.payment.findMany({
     where,

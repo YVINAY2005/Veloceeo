@@ -56,7 +56,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       console.log(`🚫 403 Forbidden Response sent for ${req.method} ${req.originalUrl}`);
       console.log(`Headers:`, JSON.stringify(req.headers, null, 2));
     }
-    return originalSend.apply(res, arguments as any);
+    return originalSend.call(this, body);
   };
   next();
 });
@@ -186,9 +186,12 @@ app.get('/health', (_req: Request, res: Response) => {
 // --- Route Debug Info (dev only) ---
 if (process.env.NODE_ENV !== 'production') {
   console.log('✅ Mounted routers:');
-  app._router.stack
-    .filter((layer: any) => layer.name === 'router')
-    .forEach((layer: any) => console.log('🔹 Router mounted at:', layer.regexp));
+  // Express internal _router property is not typed in @types/express
+  const internalApp = app as unknown as { _router: { stack: Array<{ name: string; regexp: string }> } };
+  const routerLayers = internalApp._router.stack;
+  routerLayers
+    .filter((layer) => layer.name === 'router')
+    .forEach((layer) => console.log('🔹 Router mounted at:', layer.regexp));
 }
 
 // --- 404 Handler ---

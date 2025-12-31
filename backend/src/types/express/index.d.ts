@@ -1,11 +1,21 @@
 // src/types/express.d.ts (or wherever your type definitions are)
 
-import 'express';
+import { Customer, Seller, Admin } from '@prisma/client';
 
-declare module 'express-serve-static-core' {
-  interface Request {
-    userId?: string | number; // 🔥 FIXED: Support both string (seller) and number (customer/admin)
-    role?: 'customer' | 'seller' | 'admin';
-    sessionId?: string;
+declare global {
+  namespace Express {
+    interface Request {
+      userId?: string | number;
+      role?: 'customer' | 'seller' | 'admin';
+      sessionId?: string;
+      user?: Customer | Seller | Admin;
+      sessionData?: {
+        customer_id?: number | null;
+        seller_id?: string | null;
+        admin_id?: number | null;
+      };
+    }
   }
 }
+
+export {};

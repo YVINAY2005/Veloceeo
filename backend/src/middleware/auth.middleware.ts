@@ -1,5 +1,6 @@
 // src/middleware/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
+import { Customer, Seller, Admin } from '@prisma/client';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import AppError from '../utils/AppError';
@@ -11,16 +12,7 @@ interface DecodedToken extends JwtPayload {
   role?: 'customer' | 'seller' | 'admin';
 }
 
-declare global {
-  namespace Express {
-    interface Request {
-      userId?: number | string;
-      role?: 'customer' | 'seller' | 'admin';
-      sessionId?: string;
-      user?: any;
-    }
-  }
-}
+type AuthAccount = Customer | Seller | Admin;
 
 export const protect = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -62,21 +54,21 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
       expires: updatedSession.expires_at,
     });
 
-    let account: any = null;
+    let account: AuthAccount | null = null;
     let role: 'customer' | 'seller' | 'admin' = decoded.role ?? 'customer';
 
     if (session.customer_id) {
       account = await prisma.customer.findUnique({ where: { id: session.customer_id } });
       role = 'customer';
-      req.userId = account?.id;
+      if (account) req.userId = account.id;
     } else if (session.seller_id) {
       account = await prisma.seller.findUnique({ where: { id: session.seller_id } });
       role = 'seller';
-      req.userId = account?.id;
+      if (account) req.userId = account.id;
     } else if (session.admin_id) {
       account = await prisma.admin.findUnique({ where: { id: session.admin_id } });
       role = 'admin';
-      req.userId = account?.id;
+      if (account) req.userId = account.id;
     }
 
     if (!account) return next(new AppError('Account linked to this session does not exist.', 401));
@@ -84,7 +76,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
     req.role = role;
     req.user = account;
     req.sessionId = session.session_id;
-    (req as any).sessionData = {
+    req.sessionData = {
       customer_id: session.customer_id,
       seller_id: session.seller_id,
       admin_id: session.admin_id
@@ -116,7 +108,7 @@ export const restrictTo = (...roles: Array<'admin' | 'seller' | 'customer'>) => 
 
     if (!req.role || !roles.includes(req.role)) {
       console.log(`🚫 Access Denied: role=${req.role}, required=${roles}, path=${req.path}`);
-      console.log(`🔍 Session Data:`, (req as any).sessionData);
+      console.log(`🔍 Session Data:`, req.sessionData);
       console.log(`🔍 Headers:`, JSON.stringify(req.headers, null, 2));
       return next(new AppError(`Access denied. Role ${req.role} is not authorized for this resource.`, 403));
     }

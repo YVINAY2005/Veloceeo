@@ -41,12 +41,13 @@ export async function sendEmail(to: string, subject: string, html: string) {
     console.log('📨 Response:', info.response);
 
     return info;
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     // 🔥 Log email failure
     console.error('❌ Email send failed!');
     console.error('📧 Attempted to:', to);
     console.error('📋 Subject:', subject);
-    console.error('🚨 Error:', error.message);
+    console.error('🚨 Error:', err.message);
     
     throw error;
   }

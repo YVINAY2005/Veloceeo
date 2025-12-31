@@ -3,18 +3,25 @@ import { catchAsync } from '../../utils/catchAsync';
 import * as supportService from './support.service';
 
 export const createTicket = catchAsync(async (req: Request, res: Response) => {
-  const role = (req as any).role;
-  const userId = (req as any).userId;
+  const role = req.role;
+  const userId = req.userId;
 
-  let data: any = {
+  const data: {
+    subject: string;
+    description: string;
+    priority: string | null;
+    customer_id?: number;
+    seller_id?: string;
+    admin_id?: number;
+  } = {
     subject: req.body.subject,
     description: req.body.description,
     priority: req.body.priority ?? null,
   };
 
-  if (role === 'customer') data.customer_id = userId;
-  if (role === 'seller') data.seller_id = userId;
-  if (role === 'admin') data.admin_id = userId;
+  if (role === 'customer') data.customer_id = Number(userId);
+  if (role === 'seller') data.seller_id = String(userId);
+  if (role === 'admin') data.admin_id = Number(userId);
 
   const ticket = await supportService.createTicket(data);
   res.status(201).json({ status: 'success', data: { ticket } });
@@ -22,10 +29,10 @@ export const createTicket = catchAsync(async (req: Request, res: Response) => {
 
 export const addMessage = catchAsync(async (req: Request, res: Response) => {
   const { ticketId } = req.params;
-  const role = (req as any).role;
+  const role = req.role;
 
   const message = {
-    sender_type: role,
+    sender_type: role as 'customer' | 'seller' | 'admin',
     message: req.body.message,
     timestamp: new Date().toISOString(),
   };
@@ -35,14 +42,20 @@ export const addMessage = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const listTickets = catchAsync(async (req: Request, res: Response) => {
-  const role = (req as any).role;
-  const userId = (req as any).userId;
+  const role = req.role;
+  const userId = req.userId;
 
-  const filter: any = {};
-  if (role === 'customer') filter.customer_id = userId;
-  if (role === 'seller') filter.seller_id = userId;
-  if (role === 'admin') filter.admin_id = userId;
-  if (req.query.status) filter.status = req.query.status;
+  const filter: {
+    customer_id?: number;
+    seller_id?: string;
+    admin_id?: number;
+    status?: string;
+  } = {};
+
+  if (role === 'customer') filter.customer_id = Number(userId);
+  if (role === 'seller') filter.seller_id = String(userId);
+  if (role === 'admin') filter.admin_id = Number(userId);
+  if (req.query.status) filter.status = String(req.query.status);
 
   const tickets = await supportService.getTickets(filter);
   res.json({ status: 'success', data: { tickets } });

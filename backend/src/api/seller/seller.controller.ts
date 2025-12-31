@@ -166,9 +166,9 @@ export const listPayments = async (req: Request & { userId?: string | number }, 
     const sellerId = String(req.userId);
     if (!sellerId) throw new AppError('Not authenticated', 401);
     const { status, provider, page = '1', limit = '50' } = req.query;
-    const payments = await sellerService.listPaymentsForSellerService(sellerId, {
-      status,
-      provider,
+    const payments = await sellerService.listPaymentsService(sellerId, {
+      status: status as string,
+      provider: provider as string,
       page: Number(page),
       limit: Number(limit),
     });

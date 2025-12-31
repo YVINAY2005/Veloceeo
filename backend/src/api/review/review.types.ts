@@ -7,6 +7,14 @@ export type Review = {
   review_text: string | null;
   created_at: Date;
   updated_at: Date;
+  product?: Product;
+  customer?: Customer;
+};
+
+export type Customer = {
+  id: number;
+  email: string;
+  name: string | null;
 };
 
 export type Product = {

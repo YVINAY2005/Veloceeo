@@ -69,12 +69,15 @@ const updateProductSchema = z.object({
   brand: z.string().optional().nullable(),
 });
 
-function parseZod(schema: any, value: any) {
+function parseZod(schema: z.ZodSchema, value: unknown) {
   try {
     return schema.parse(value);
-  } catch (err: any) {
-    const messages = (err?.errors || []).map((e: any) => e.message).join('. ');
-    throw new AppError(messages || 'Invalid input', 400);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      const messages = err.errors.map((e) => e.message).join('. ');
+      throw new AppError(messages || 'Invalid input', 400);
+    }
+    throw err;
   }
 }
 

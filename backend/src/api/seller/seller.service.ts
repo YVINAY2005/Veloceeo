@@ -1,11 +1,67 @@
 // src/api/seller/seller.service.ts
 import { prisma, Prisma } from '../../lib/prisma';
+import { PaymentStatus } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { config } from '../../config';
 import AppError from '../../utils/AppError';
 import { createSession, SESSION_TTL_MS } from '../../utils/session';
+
+interface SellerSignupPayload {
+  email: string;
+  password: string;
+  business_name: string;
+  name?: string;
+  phone?: string;
+  gst_number?: string;
+}
+
+interface SellerLoginPayload {
+  email?: string;
+  sellerId?: string;
+  password?: string;
+  ip?: string;
+  userAgent?: string;
+}
+
+interface CreateStorePayload {
+  name: string;
+  slug: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+}
+
+interface CreateProductPayload {
+  store_id: string | number;
+  name: string;
+  slug: string;
+  sku: string;
+  description?: string;
+  price_cents: number;
+  currency?: string;
+  stock_quantity?: number;
+  is_active?: boolean;
+  category_id?: string | number;
+  brand?: string;
+  images?: Array<{
+    url: string;
+    is_primary?: boolean;
+    display_order?: number | string;
+  }>;
+}
+
+interface UpdateProductPayload extends Partial<CreateProductPayload> {}
+
+interface ListPaymentsFilters {
+  status?: string;
+  provider?: string;
+  page?: number | string;
+  limit?: number | string;
+}
 
 function signToken(sessionId: string, role: 'admin' | 'seller' | 'customer') {
   return jwt.sign({ session_id: sessionId, role }, config.JWT_SECRET as string, { expiresIn: '24h' });
@@ -14,7 +70,7 @@ function signToken(sessionId: string, role: 'admin' | 'seller' | 'customer') {
 /**
  * Seller signup - creates Seller record (schema fields)
  */
-export const signupService = async (payload: any) => {
+export const signupService = async (payload: SellerSignupPayload) => {
   const { email, password, name, phone, business_name, gst_number } = payload;
   if (!email || !password || !business_name) throw new AppError('email, password and business_name required', 400);
 
@@ -81,7 +137,8 @@ export const signupService = async (payload: any) => {
       .catch((err) => console.error('Background email error:', err));
 
     return { id: seller.id, email: seller.email, business_name: seller.business_name, name: seller.name };
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     // Log failed attempt
     await prisma.auditLog.create({
       data: {
@@ -91,11 +148,12 @@ export const signupService = async (payload: any) => {
         details: { 
           email, 
           business_name, 
-          error: error.message || 'Unknown error',
+          error: err.message || 'Unknown error',
           attempt_status: 'FAILED'
         },
       },
     });
+    console.error('❌ Failed to update seller settings:', err.message);
     throw error;
   }
 };
@@ -104,7 +162,7 @@ export const signupService = async (payload: any) => {
  * Seller login - create session, return token
  * Supports ID-only login for simplified authentication
  */
-export const loginService = async (payload: any) => {
+export const loginService = async (payload: SellerLoginPayload) => {
   const { email, sellerId, password } = payload;
   
   // Requirement: ID-only authentication supported
@@ -201,7 +259,7 @@ export const getMeService = async (id: string) => {
   return seller;
 };
 
-export const demoLoginService = async (metadata?: any) => {
+export const demoLoginService = async (metadata?: { ip?: string; userAgent?: string }) => {
   const friendlyId = `seller_${Date.now().toString().slice(-6)}`;
   const email = `${friendlyId}@example.com`;
   const hashed = await bcrypt.hash('demo', 8);
@@ -242,7 +300,7 @@ export const ensureDefaultStoreForSellerService = async (sellerId: string) => {
 /**
  * Stores
  */
-export const createStoreService = async (sellerId: string, payload: any) => {
+export const createStoreService = async (sellerId: string, payload: CreateStorePayload) => {
   const { name, slug, description, address, city, state, country } = payload;
   if (!name || !slug) throw new AppError('name and slug required', 400);
 
@@ -290,7 +348,7 @@ export const listStoresForSellerService = async (sellerId: string) => {
 /**
  * Products (ensure seller owns the store)
  */
-export const createProductService = async (sellerId: string, payload: any) => {
+export const createProductService = async (sellerId: string, payload: CreateProductPayload) => {
   const {
     store_id,
     name,
@@ -336,7 +394,7 @@ export const createProductService = async (sellerId: string, payload: any) => {
         is_active,
         brand: payload.brand ?? null,
         images: {
-          create: (payload.images || []).map((img: any) => ({
+          create: (payload.images || []).map((img) => ({
             url: img.url,
             is_primary: !!img.is_primary,
             display_order: Number(img.display_order || 0)
@@ -381,7 +439,7 @@ export const listMyProductsService = async (sellerId: string) => {
   }));
 };
 
-export const updateProductService = async (sellerId: string, productId: number, payload: any) => {
+export const updateProductService = async (sellerId: string, productId: number, payload: UpdateProductPayload) => {
   const product = await prisma.product.findUnique({ where: { id: Number(productId) } });
   if (!product) throw new AppError('Product not found', 404);
 
@@ -390,18 +448,22 @@ export const updateProductService = async (sellerId: string, productId: number, 
   if (!store || store.seller_id !== sellerId) throw new AppError('Forbidden: not your product', 403);
 
   // build update object
-  const data: any = {};
+  const data: Prisma.ProductUpdateInput = {};
   if (payload.name !== undefined) data.name = payload.name;
   if (payload.description !== undefined) data.description = payload.description;
   if (payload.price_cents !== undefined) data.price_cents = Number(payload.price_cents);
   if (payload.stock_quantity !== undefined) data.stock_quantity = Number(payload.stock_quantity);
   if (payload.is_active !== undefined) data.is_active = !!payload.is_active;
-  if (payload.category_id !== undefined) data.category_id = payload.category_id ? Number(payload.category_id) : null;
+  if (payload.category_id !== undefined) {
+    data.category = payload.category_id 
+      ? { connect: { id: Number(payload.category_id) } } 
+      : { disconnect: true };
+  }
   if (payload.brand !== undefined) data.brand = payload.brand;
   if (payload.images !== undefined) {
     data.images = {
       deleteMany: {},
-      create: (payload.images || []).map((img: any) => ({
+      create: (payload.images || []).map((img) => ({
         url: img.url,
         is_primary: !!img.is_primary,
         display_order: Number(img.display_order || 0)
@@ -422,7 +484,7 @@ export const updateProductService = async (sellerId: string, productId: number, 
         details: { 
           fields_updated: Object.keys(data),
           name: updated.name 
-        },
+        } as Prisma.InputJsonValue,
       },
     });
 
@@ -462,9 +524,10 @@ export const deleteProductService = async (sellerId: string, productId: number) 
 /**
  * List payments (orders) for seller across all their stores
  */
-export const listPaymentsForSellerService = async (sellerId: string, { status, provider, page = 1, limit = 50 }: any) => {
-  const where: any = { seller_id: sellerId };
-  if (status) where.status = String(status);
+export const listPaymentsService = async (sellerId: string, filters: ListPaymentsFilters) => {
+  const { status, provider, page = 1, limit = 50 } = filters;
+  const where: Prisma.PaymentWhereInput = { seller_id: sellerId };
+  if (status) where.status = status as PaymentStatus;
   if (provider) where.provider = String(provider);
 
   const payments = await prisma.payment.findMany({

@@ -8,11 +8,25 @@ import AppError from '../../utils/AppError';
 import { notifyPasswordReset } from '../../api/notification/notification.service';
 import { createSession, SESSION_TTL_MS } from '../../utils/session';
 
+interface CustomerSignupPayload {
+  email: string;
+  password: string;
+  name?: string;
+  phone?: string;
+}
+
+interface CustomerLoginPayload {
+  email: string;
+  password: string;
+  ip?: string;
+  userAgent?: string;
+}
+
 function signToken(sessionId: string, role: 'admin' | 'seller' | 'customer') {
   return jwt.sign({ session_id: sessionId, role }, config.JWT_SECRET as string, { expiresIn: '24h' });
 }
 
-export const signupService = async (payload: any) => {
+export const signupService = async (payload: CustomerSignupPayload) => {
   const { email, password, name, phone } = payload;
   if (!email || !password) throw new AppError('Email and password are required', 400);
 
@@ -52,7 +66,7 @@ export const signupService = async (payload: any) => {
   return { id: customer.id, email: customer.email, name: customer.name, phone: customer.phone };
 };
 
-export const loginService = async (payload: any) => {
+export const loginService = async (payload: CustomerLoginPayload) => {
   const { email, password } = payload;
   if (!email || !password) throw new AppError('Email and password are required', 400);
 
@@ -130,7 +144,7 @@ export const resetPasswordService = async (token: string, password: string) => {
   return { message: 'Password has been reset successfully.' };
 };
 
-export const demoLoginService = async (metadata?: any) => {
+export const demoLoginService = async (metadata?: { ip?: string; userAgent?: string }) => {
   // create or reuse a demo customer
   const email = `demo_${Date.now()}@example.com`;
   const hashed = await bcrypt.hash('demo', 8);
@@ -147,6 +161,13 @@ export const demoLoginService = async (metadata?: any) => {
   const token = signToken(session.session_id, 'customer');
   return { token, expiresAt: session.expires_at, user: { id: customer.id, email: customer.email, name: customer.name } };
 };
+
+interface UpdateMePayload {
+  name?: string;
+  phone?: string;
+  password?: string;
+}
+
 export const getMeService = async (userId: number) => {
   const customer = await prisma.customer.findUnique({
     where: { id: userId },
@@ -164,8 +185,8 @@ export const getMeService = async (userId: number) => {
   return customer;
 };
 
-export const updateMeService = async (userId: number, payload: any) => {
-  const allowed: any = {};
+export const updateMeService = async (userId: number, payload: UpdateMePayload) => {
+  const allowed: Prisma.CustomerUpdateInput = {};
   if (payload.name !== undefined) allowed.name = payload.name;
   if (payload.phone !== undefined) allowed.phone = payload.phone;
   if (payload.password !== undefined) {
@@ -188,14 +209,36 @@ export const updateMeService = async (userId: number, payload: any) => {
   return updated;
 };
 
+interface CreateOrderPayload {
+  items: Array<{ productId: number; quantity?: number }>;
+  shipping?: {
+    address?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    country?: string;
+  };
+  paymentMethod?: string;
+}
+
+interface OrderItemDetail {
+  productId: number;
+  name: string;
+  sku: string | null;
+  unit_price_cents: number;
+  quantity: number;
+  line_total_cents: number;
+  storeId: number;
+}
+
 /**
  * 🔥 FIXED: seller_id is now String (from Store relation)
  */
-export const createOrderService = async (userId: number, payload: any) => {
+export const createOrderService = async (userId: number, payload: CreateOrderPayload) => {
   const { items, shipping, paymentMethod } = payload;
   if (!Array.isArray(items) || items.length === 0) throw new AppError('No items provided', 400);
 
-  const productIds = items.map((it: any) => it.productId);
+  const productIds = items.map((it) => it.productId);
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
     include: { store: true },
@@ -206,7 +249,7 @@ export const createOrderService = async (userId: number, payload: any) => {
   }
 
   let totalCents = 0;
-  const itemsDetail: any[] = [];
+  const itemsDetail: OrderItemDetail[] = [];
   
   // 🔥 Get seller_id from the first product's store
   let sellerId: string | null = null;
@@ -255,7 +298,7 @@ export const createOrderService = async (userId: number, payload: any) => {
           items: itemsDetail,
           shipping: shipping ?? null,
           paymentMethod: paymentMethod ?? null,
-        },
+        } as unknown as Prisma.InputJsonValue,
       },
     });
 
@@ -283,7 +326,7 @@ export const createOrderService = async (userId: number, payload: any) => {
     currency: payment.currency,
     provider: payment.provider,
     status: payment.status,
-    metadata: payment.metadata,
+    metadata: payment.metadata as Prisma.JsonValue,
   };
 };
 

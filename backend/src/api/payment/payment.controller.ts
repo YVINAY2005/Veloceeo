@@ -30,8 +30,8 @@ export const listPayments = async (req: Request, res: Response, next: NextFuncti
     const payments = await paymentService.listPaymentsService({
       page: Number(page),
       limit: Number(limit),
-      status,
-      provider,
+      status: status ? String(status) : undefined,
+      provider: provider ? String(provider) : undefined,
     });
     return res.json(payments);
   } catch (err) {

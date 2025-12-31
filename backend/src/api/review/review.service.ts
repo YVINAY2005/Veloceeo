@@ -1,4 +1,4 @@
-import prisma from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import AppError from '../../utils/AppError';
 import { Review } from './review.types';
 
@@ -93,7 +93,7 @@ class ReviewService {
       data: {
         averageRating,
         totalRatings,
-        ratingBreakdown: ratingBreakdown as any,
+        ratingBreakdown: ratingBreakdown as Prisma.InputJsonObject,
       },
     });
   }
@@ -230,7 +230,7 @@ class ReviewService {
     ]);
 
     return {
-      reviews: reviews as any[],
+      reviews: reviews as Review[],
       totalPages: Math.ceil(totalCount / limit),
       totalCount,
     };

@@ -34,12 +34,15 @@ const createSellerSchema = z.object({
 /**
  * Helper: parse zod schema and throw AppError on failure
  */
-function parseZod(schema: any, value: any) {
+function parseZod(schema: z.ZodSchema, value: unknown) {
   try {
     return schema.parse(value);
-  } catch (err: any) {
-    const messages = (err?.errors || []).map((e: any) => e.message).join('. ');
-    throw new AppError(messages || 'Invalid input', 400);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      const messages = err.errors.map((e) => e.message).join('. ');
+      throw new AppError(messages || 'Invalid input', 400);
+    }
+    throw err;
   }
 }
 
@@ -50,7 +53,7 @@ export const validateSignup = (req: Request, _res: Response, next: NextFunction)
   try {
     parseZod(signupSchema, req.body);
     next();
-  } catch (err: any) {
+  } catch (err) {
     next(err);
   }
 };
@@ -59,7 +62,7 @@ export const validateLogin = (req: Request, _res: Response, next: NextFunction) 
   try {
     parseZod(loginSchema, req.body);
     next();
-  } catch (err: any) {
+  } catch (err) {
     next(err);
   }
 };
@@ -68,7 +71,7 @@ export const validateCreateSeller = (req: Request, _res: Response, next: NextFun
   try {
     parseZod(createSellerSchema, req.body);
     next();
-  } catch (err: any) {
+  } catch (err) {
     next(err);
   }
 };

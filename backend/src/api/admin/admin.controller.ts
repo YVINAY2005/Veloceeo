@@ -163,10 +163,10 @@ export const getOrders = async (req: Request, res: Response, next: NextFunction)
   try {
     const { status, provider, from, to, page = '1', limit = '50' } = req.query;
     const orders = await adminService.getOrdersService({
-      status,
-      provider,
-      from,
-      to,
+      status: status ? String(status) : undefined,
+      provider: provider ? String(provider) : undefined,
+      from: from ? String(from) : undefined,
+      to: to ? String(to) : undefined,
       page: Number(page),
       limit: Number(limit),
     });

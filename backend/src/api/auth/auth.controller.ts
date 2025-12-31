@@ -10,14 +10,15 @@ export const getMe = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     // Remove sensitive data
-    const user = { ...req.user };
-    delete user.password;
+    // We use a type guard approach or cast to a known type that has password
+    const user = req.user as { password?: string };
+    const { password, ...userWithoutPassword } = user;
 
     return res.status(200).json({
       status: 'success',
       data: {
         role: req.role,
-        user
+        user: userWithoutPassword
       }
     });
   } catch (err) {

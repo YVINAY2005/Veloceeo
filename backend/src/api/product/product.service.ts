@@ -195,8 +195,7 @@ export const searchProductsByName = async (
   } = {}
 ) => {
   const query = (name || '').trim();
-
-  const where: any = {
+  const where: Prisma.ProductWhereInput = {
     is_active: true,
   };
 
@@ -226,7 +225,12 @@ export const searchProductsByName = async (
       include: { subcategories: true },
     });
 
-    const addChildren = (cats: any[]) => {
+    interface CategoryWithSubs {
+      id: number;
+      subcategories?: CategoryWithSubs[];
+    }
+
+    const addChildren = (cats: CategoryWithSubs[]) => {
       for (const cat of cats) {
         allCategoryIds.add(cat.id);
         if (cat.subcategories && cat.subcategories.length > 0) {
@@ -311,12 +315,16 @@ export const getCategoryHierarchy = async () => {
     },
   });
 
+  interface CategoryNode extends Prisma.CategoryGetPayload<{ include: { subcategories: true } }> {
+    children: CategoryNode[];
+  }
+
   // Simple hierarchy builder
-  const buildTree = (parentId: number | null = null): any[] => {
+  const buildTree = (parentId: number | null = null): CategoryNode[] => {
     return categories
       .filter((c) => c.parent_id === parentId)
       .map((c) => ({
-        ...c,
+        ...(c as Prisma.CategoryGetPayload<{ include: { subcategories: true } }>),
         children: buildTree(c.id),
       }));
   };
@@ -371,16 +379,18 @@ export const updateProduct = async (id: number, data: Partial<CreateProductInput
     if (existing) throw new AppError('Product SKU already exists', 400);
   }
 
-  const updateData: any = {};
+  const updateData: Prisma.ProductUpdateInput = {};
   if (data.name !== undefined) updateData.name = data.name;
   if (data.slug !== undefined) updateData.slug = data.slug;
   if (data.sku !== undefined) updateData.sku = data.sku;
   if (data.description !== undefined) updateData.description = data.description;
   if (data.price_cents !== undefined) updateData.price_cents = data.price_cents;
   if (data.stock_quantity !== undefined) updateData.stock_quantity = data.stock_quantity;
-  if (data.category_id !== undefined) updateData.category_id = data.category_id;
+  if (data.category_id !== undefined && data.category_id !== null) {
+    updateData.category = { connect: { id: data.category_id } };
+  }
   if (data.brand !== undefined) updateData.brand = data.brand;
-  if ((data as any).is_active !== undefined) updateData.is_active = (data as any).is_active;
+  if (data.is_active !== undefined) updateData.is_active = data.is_active;
 
   return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // If images are provided, replace them

@@ -1,5 +1,5 @@
 
-import prisma from '../../lib/prisma';
+import { prisma } from '../../lib/prisma';
 import AppError from '../../utils/AppError';
 
 export interface CartItem {
@@ -56,7 +56,7 @@ const getCartByCustomerId = async (customerId: number) => {
     });
   }
 
-  const items = cart.items.map((item: any) => ({
+  const items = cart.items.map((item) => ({
     id: item.id,
     product_id: item.product_id,
     product: {

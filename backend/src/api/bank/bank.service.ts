@@ -1,8 +1,15 @@
-import { prisma } from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import AppError from '../../utils/AppError';
 
+interface BankAccountInput {
+  bank_name: string;
+  account_number: string;
+  ifsc_code: string;
+  is_primary?: boolean;
+}
+
 // Add bank account
-export const addBankAccount = async (sellerId: string, data: any) => {
+export const addBankAccount = async (sellerId: string, data: BankAccountInput) => {
   const { bank_name, account_number, ifsc_code, is_primary } = data;
 
   // If marking as primary, remove primary from all others
@@ -47,7 +54,7 @@ export const getPrimaryBank = async (sellerId: string) => {
 export const updateBankAccount = async (
   sellerId: string,
   bankId: number,
-  data: any
+  data: Partial<BankAccountInput>
 ) => {
   const existing = await prisma.bankAccount.findUnique({
     where: { id: bankId }
@@ -67,7 +74,7 @@ export const updateBankAccount = async (
 
   return prisma.bankAccount.update({
     where: { id: bankId },
-    data
+    data: data as Prisma.BankAccountUpdateInput
   });
 };
 

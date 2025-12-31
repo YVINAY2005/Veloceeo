@@ -31,7 +31,7 @@ async function startServer() {
 
     app.listen(PORT, () => {
       console.log(`🚀 Server is running on port ${PORT} in ${config.NODE_ENV} mode.`);
-    }).on('error', (err: any) => {
+    }).on('error', (err: Error & { code?: string }) => {
       if (err.code === 'EADDRINUSE') {
         console.error(`❌ Port ${PORT} is already in use. Please try a different port or kill the process using it.`);
         process.exit(1);

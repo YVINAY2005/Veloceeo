@@ -1,7 +1,18 @@
 // src/api/store/store.service.ts
-import { prisma } from '../../lib/prisma';
+import { prisma, Prisma } from '../../lib/prisma';
 import AppError from '../../utils/AppError';
 import { Request } from 'express';
+
+export interface UpdateStorePayload {
+  name?: string;
+  slug?: string;
+  description?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  is_active?: boolean;
+}
 
 /**
  * Create a new store for a seller
@@ -113,7 +124,7 @@ export const getStoreById = async (storeId: number, sellerId: string) => {
  * Update a store
  * Only the owner can update
  */
-export const updateStore = async (storeId: number, sellerId: string, data: any) => {
+export const updateStore = async (storeId: number, sellerId: string, data: UpdateStorePayload) => {
   // First verify the store exists and belongs to the seller
   const store = await prisma.store.findUnique({ where: { id: storeId } });
   
@@ -126,7 +137,7 @@ export const updateStore = async (storeId: number, sellerId: string, data: any) 
   }
 
   // Prepare update data
-  const updateData: any = {};
+  const updateData: Prisma.StoreUpdateInput = {};
   if (data.name !== undefined) updateData.name = data.name;
   if (data.slug !== undefined) {
     // Check if new slug already exists (and it's not the current store's slug)

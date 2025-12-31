@@ -39,12 +39,15 @@ const createOrderSchema = z.object({
   paymentMethod: z.string().optional(), // e.g., 'online' | 'cod'
 });
 
-function parseZod(schema: any, value: any) {
+function parseZod(schema: z.ZodSchema, value: unknown) {
   try {
     return schema.parse(value);
-  } catch (err: any) {
-    const messages = (err?.errors || []).map((e: any) => e.message).join('. ');
-    throw new AppError(messages || 'Invalid input', 400);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      const messages = err.errors.map((e) => e.message).join('. ');
+      throw new AppError(messages || 'Invalid input', 400);
+    }
+    throw err;
   }
 }
 

@@ -258,8 +258,9 @@ export const notifyCustomerSignup = async (customerId: number) => {
     );
 
     console.log(`✅ Welcome email sent successfully to customer: ${customer.email}`);
-  } catch (error: any) {
-    console.error('❌ Failed to send welcome email to customer:', error.message);
+  } catch (error) {
+    const err = error as Error;
+    console.error('❌ Failed to send welcome email to customer:', err.message);
   }
 };
 
@@ -324,8 +325,9 @@ export const notifyPasswordReset = async (customerEmail: string, resetToken: str
     );
 
     console.log(`✅ Password reset email sent successfully to: ${customer.email}`);
-  } catch (error: any) {
-    console.error('❌ Failed to send password reset email to:', error.message);
+  } catch (error) {
+    const err = error as Error;
+    console.error('❌ Failed to send password reset email to:', err.message);
   }
 };
 
@@ -390,8 +392,9 @@ export const notifySellerSignup = async (sellerId: string) => {
     );
 
     console.log(`✅ Welcome email sent successfully to seller: ${seller.email}`);
-  } catch (error: any) {
-    console.error('❌ Failed to send welcome email to seller:', error.message);
+  } catch (error) {
+    const err = error as Error;
+    console.error('❌ Failed to send welcome email to seller:', err.message);
   }
 };
 
@@ -474,14 +477,16 @@ export const notifyAdminNewSeller = async (sellerId: string) => {
             console.log(`⏳ Waiting 2 seconds before next admin email...`);
             await delay(2000);
           }
-        } catch (error: any) {
-          console.error(`❌ Failed to email admin ${admin.email}:`, error.message);
+        } catch (error) {
+          const err = error as Error;
+          console.error(`❌ Failed to email admin ${admin.email}:`, err.message);
         }
       }
     }
 
     console.log(`✅ All admins notified about new seller: ${seller.business_name}`);
-  } catch (error: any) {
-    console.error('❌ Failed to notify admins about new seller:', error.message);
+  } catch (error) {
+    const err = error as Error;
+    console.error('❌ Failed to notify admins about new seller:', err.message);
   }
 };
