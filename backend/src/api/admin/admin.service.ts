@@ -8,7 +8,7 @@ import { config } from '../../config';
 import AppError from '../../utils/AppError';
 import { createSession, SESSION_TTL_MS } from '../../utils/session';
 
-const ALLOWED_ADMIN_EMAIL = (process.env.ALLOWED_ADMIN_EMAIL || 'veloceo69@gmail.com').toLowerCase();
+const ALLOWED_ADMIN_EMAIL = (process.env.ALLOWED_ADMIN_EMAIL || 'veloceo69@gmail.com').replace(/['"]/g, '').toLowerCase();
 
 interface AdminSignupPayload {
   email: string;
