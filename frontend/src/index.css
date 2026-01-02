@@ -502,12 +502,14 @@ button { font-family: inherit; }
 }
 
 .header-logo img {
-  height: 32px; /* Reduced from 40px */
+  height: 40px;
+  width: auto;
   border-radius: var(--radius);
+  object-fit: contain;
 }
 
 .header-logo .brand-name {
-  font-size: 20px; /* Reduced from 24px */
+  font-size: 24px;
   font-weight: 800;
   color: var(--primary);
   letter-spacing: -0.5px;
@@ -549,8 +551,133 @@ button { font-family: inherit; }
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 20px; /* Reduced from 24px */
+  gap: 20px;
   flex-shrink: 0;
+}
+
+.desktop-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .desktop-actions {
+    display: none;
+  }
+}
+
+.hamburger-menu {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+}
+
+@media (max-width: 768px) {
+  .hamburger-menu {
+    display: flex;
+  }
+}
+
+.hamburger-menu span {
+  width: 24px;
+  height: 2px;
+  background: var(--text-main);
+  border-radius: 10px;
+  transition: all 0.3s linear;
+  position: relative;
+  transform-origin: 1px;
+}
+
+.hamburger-menu.open span:first-child {
+  transform: rotate(45deg);
+}
+
+.hamburger-menu.open span:nth-child(2) {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.hamburger-menu.open span:nth-child(3) {
+  transform: rotate(-45deg);
+}
+
+/* Mobile Nav Drawer */
+.mobile-nav-drawer {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 280px;
+  height: 100vh;
+  background: var(--white);
+  box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+  transition: right 0.3s ease-in-out;
+  z-index: 1000;
+  padding: 80px 24px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-nav-drawer.open {
+  right: 0;
+}
+
+.mobile-nav-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-main);
+  background: var(--bg-soft);
+}
+
+.mobile-nav-item:hover, .mobile-nav-item:active {
+  background: rgba(155, 70, 52, 0.1);
+  color: var(--primary);
+}
+
+.mobile-nav-item .nav-icon {
+  font-size: 20px;
+}
+
+.mobile-nav-item .nav-text {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.mobile-nav-item.logout {
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+  background: transparent;
+}
+
+.mobile-nav-item.logout:hover {
+  background: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+}
+
+.cart-badge.mobile {
+  position: relative;
+  top: auto;
+  right: auto;
+  margin-left: auto;
 }
 
 .action-item {
@@ -632,6 +759,12 @@ button { font-family: inherit; }
   border-radius: 20px;
   font-weight: 600;
   font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .sub-header {
+    display: none;
+  }
 }
 
 /* Product Card Redesign */
@@ -1147,11 +1280,7 @@ button { font-family: inherit; }
 .sidebar {
   background: var(--white);
   border-radius: var(--radius-lg);
-  box-shadow: var(--card-shadow);
   padding: 24px;
-  height: fit-content;
-  position: sticky;
-  top: 92px;
 }
 
 .sidebar-title {
@@ -1183,6 +1312,24 @@ button { font-family: inherit; }
   letter-spacing: 0.5px;
 }
 
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  z-index: 1500;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s;
+}
+
+.mobile-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -1194,13 +1341,94 @@ button { font-family: inherit; }
 }
 
 /* Responsive */
+/* Responsive Catalog Layout */
 @media (max-width: 992px) {
   .catalog-layout {
     grid-template-columns: 1fr;
   }
+  
   .sidebar {
-    position: static;
+    position: fixed;
+    top: 0;
+    left: -100%;
+    width: 300px;
+    height: 100vh;
+    z-index: 2000;
+    margin: 0;
+    border-radius: 0;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 5px 0 20px rgba(0,0,0,0.15);
   }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .filter-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-main);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .filter-toggle-btn:hover {
+    background: var(--border);
+  }
+
+  .filter-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--bg-soft);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text-muted);
+    transition: all 0.2s;
+  }
+
+  .filter-close-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+  }
+}
+
+@media (min-width: 993px) {
+  .filter-toggle-btn,
+  .filter-close-btn {
+    display: none;
+  }
+  
+  .sidebar {
+    position: sticky;
+    top: 92px;
+    left: auto;
+    width: auto;
+    height: fit-content;
+    z-index: 10;
+    box-shadow: var(--card-shadow);
+  }
+}
+
+.filter-toggle-text {
+  font-size: 14px;
+}
+
+.align-center {
+  align-items: center;
 }
 
 @media (max-width: 768px) {
@@ -1680,6 +1908,161 @@ button { font-family: inherit; }
   align-items: center;
   justify-content: center;
   padding: 16px;
+  position: relative; /* For profile button */
+  transition: background 0.5s ease;
+}
+
+/* Role-based background colors */
+.login-panel.role-admin { background: #fff1f0; }
+.login-panel.role-seller { background: #e6f7ff; }
+
+/* Role Switcher Button & Dropdown */
+.role-switcher-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 100;
+}
+
+.profile-icon-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #555;
+}
+
+.profile-icon-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  border-color: var(--rust);
+  color: var(--rust);
+}
+
+.profile-icon-btn .user-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.role-dropdown {
+  position: absolute;
+  top: 56px;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  border: 1px solid #eee;
+  min-width: 200px;
+  overflow: hidden;
+  transform-origin: top right;
+  animation: dropdownSlide 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+@keyframes dropdownSlide {
+  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.dropdown-header {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-weight: 600;
+  color: #444;
+  transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+  background: #f9f9f9;
+  color: var(--rust);
+}
+
+.dropdown-item.active {
+  background: #fdf8f0;
+  color: var(--rust);
+}
+
+.role-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.role-dot.customer { background: var(--rust); }
+.role-dot.seller { background: #1890ff; }
+.role-dot.admin { background: #f5222d; }
+
+/* Back Button in Form */
+.form-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.btn-back-login {
+  background: #f0f0f0;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-back-login:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+/* Role-specific styles for Login Card */
+.role-seller .login-auth-card {
+  border-top: 4px solid #1890ff;
+}
+
+.role-seller .btn-login {
+  background: #1890ff;
+}
+
+.role-seller .btn-login:hover {
+  background: #096dd9;
+}
+
+.role-admin .login-auth-card {
+  border-top: 4px solid #f5222d;
+}
+
+.role-admin .btn-login {
+  background: #f5222d;
+}
+
+.role-admin .btn-login:hover {
+  background: #cf1322;
 }
 
 .login-container {
@@ -1715,19 +2098,20 @@ button { font-family: inherit; }
 }
 
 .login-logo {
-  width: 32px;
-  height: 32px;
+  width: 100px;
+  height: 100px;
   background: white;
-  padding: 6px;
-  border-radius: 10px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 12px;
+  border-radius: 20px;
+  margin-bottom: 28px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
   z-index: 1;
   object-fit: contain;
+  image-rendering: -webkit-optimize-contrast; /* Ensure crispness */
 }
 
 .login-brand-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   margin: 0 0 8px 0;
   letter-spacing: -0.5px;
@@ -1765,33 +2149,6 @@ button { font-family: inherit; }
   flex-direction: column;
   justify-content: center;
   background: #fff;
-}
-
-.auth-tabs {
-  display: flex;
-  background: #f5f5f5;
-  padding: 4px;
-  border-radius: 12px;
-  margin-bottom: 24px;
-}
-
-.tab-btn {
-  flex: 1;
-  border: none;
-  background: transparent;
-  padding: 10px 4px;
-  font-weight: 600;
-  font-size: 13px;
-  color: #666;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.tab-btn.active {
-  background: var(--white);
-  color: var(--rust);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .auth-form {
@@ -1993,11 +2350,6 @@ button { font-family: inherit; }
 
   .form-grid {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .tab-btn {
-    font-size: 14px;
-    padding: 12px;
   }
 }
 

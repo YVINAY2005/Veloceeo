@@ -100,6 +100,25 @@ export default function VeloceeoMVP() {
     categories: [],
     search: ''
   });
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const mobileMenuRef = useRef(null);
+  const filterRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setIsMobileMenuOpen(false);
+      }
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setIsFilterOpen(false);
+      }
+    };
+    if (isMobileMenuOpen || isFilterOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isMobileMenuOpen, isFilterOpen]);
   const [brandSearch, setBrandSearch] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
 
@@ -2561,10 +2580,11 @@ export default function VeloceeoMVP() {
     setOpenStoreId,
     setView,
     setUserSellerId,
+    setUser,
+    fetchCart,
   }) {
     const [sellerIdInput, setSellerIdInput] = useState("");
     const [sellerPasswordInput, setSellerPasswordInput] = useState("");
-    const [showCustomerLogin, setShowCustomerLogin] = useState(false);
     const [custEmail, setCustEmail] = useState("");
     const [custPassword, setCustPassword] = useState("");
     const [showCustomerSignup, setShowCustomerSignup] = useState(false);
@@ -2577,6 +2597,18 @@ export default function VeloceeoMVP() {
     const [adminPassword, setAdminPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
     const [activeTab, setActiveTab] = useState("customer"); // customer, seller, admin
+    const [showRoleMenu, setShowRoleMenu] = useState(false);
+    const roleMenuRef = useRef(null);
+
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (roleMenuRef.current && !roleMenuRef.current.contains(event.target)) {
+          setShowRoleMenu(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     useEffect(() => {
       setError("");
@@ -2608,7 +2640,6 @@ export default function VeloceeoMVP() {
         .catch((e) => {
           if (e?.status === 401) {
             setError("Invalid credentials — please sign up first");
-            setShowCustomerLogin(false);
             setShowCustomerSignup(true);
             setSignupEmail(custEmail.trim());
           } else {
@@ -2654,7 +2685,48 @@ export default function VeloceeoMVP() {
     };
 
     return (
-      <div className="panel login-panel">
+      <div className={`panel login-panel role-${activeTab}`}>
+        {/* Profile Icon and Dropdown */}
+        <div className="role-switcher-container" ref={roleMenuRef}>
+          <button 
+            className="profile-icon-btn" 
+            onClick={() => setShowRoleMenu(!showRoleMenu)}
+            aria-label="Switch Login Role"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="user-icon">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </button>
+          
+          {showRoleMenu && (
+            <div className="role-dropdown fade-in">
+              <div className="dropdown-header">Switch Role</div>
+              <button 
+                className={`dropdown-item ${activeTab === 'customer' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('customer'); setShowRoleMenu(false); }}
+              >
+                <span className="role-dot customer"></span>
+                Customer Login
+              </button>
+              <button 
+                className={`dropdown-item ${activeTab === 'seller' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('seller'); setShowRoleMenu(false); }}
+              >
+                <span className="role-dot seller"></span>
+                Seller Login
+              </button>
+              <button 
+                className={`dropdown-item ${activeTab === 'admin' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('admin'); setShowRoleMenu(false); }}
+              >
+                <span className="role-dot admin"></span>
+                Admin Login
+              </button>
+            </div>
+          )}
+        </div>
+
         <div className="login-container">
           <div className="login-brand">
             <div className="brand-content">
@@ -2670,12 +2742,6 @@ export default function VeloceeoMVP() {
           </div>
 
           <div className="login-auth-card">
-            <div className="auth-tabs">
-              <button className={`tab-btn ${activeTab === 'customer' ? 'active' : ''}`} onClick={() => setActiveTab('customer')}>Customer</button>
-              <button className={`tab-btn ${activeTab === 'seller' ? 'active' : ''}`} onClick={() => setActiveTab('seller')}>Seller</button>
-              <button className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`} onClick={() => setActiveTab('admin')}>Admin</button>
-            </div>
-
             <div className="auth-content">
               {error && (
                 <div className="auth-error fade-in" role="alert">
@@ -2833,7 +2899,12 @@ export default function VeloceeoMVP() {
 
               {activeTab === 'seller' && (
                 <div className="auth-form fade-in">
-                  <h2 className="auth-title">Seller Portal</h2>
+                  <div className="form-header">
+                    <button className="btn-back-login" onClick={() => setActiveTab('customer')}>
+                      ← Back
+                    </button>
+                    <h2 className="auth-title">Seller Portal</h2>
+                  </div>
                   <p className="auth-subtitle">Manage your store and products</p>
 
                   <div className="form-group">
@@ -2877,7 +2948,12 @@ export default function VeloceeoMVP() {
 
               {activeTab === 'admin' && (
                 <div className="auth-form fade-in">
-                  <h2 className="auth-title">Administrator</h2>
+                  <div className="form-header">
+                    <button className="btn-back-login" onClick={() => setActiveTab('customer')}>
+                      ← Back
+                    </button>
+                    <h2 className="auth-title">Administrator</h2>
+                  </div>
                   <p className="auth-subtitle">System management and analytics</p>
 
                   <div className="form-group">
@@ -3047,6 +3123,8 @@ export default function VeloceeoMVP() {
     setOpenStoreId={setOpenStoreId}
     setView={setView}
     setUserSellerId={setUserSellerId}
+    setUser={setUser}
+    fetchCart={fetchCart}
   />;
   /* ---------- JSX render ---------- */
   return (
@@ -3071,34 +3149,93 @@ export default function VeloceeoMVP() {
             </div>
 
             <div className="header-actions">
-              <div className="action-item" onClick={() => { setOpenStoreId(null); setView("home"); }}>
-                <span>🏠 Home</span>
-              </div>
-              
-              {(isCustomer() || isAdmin()) && (
-                <div className="action-item" onClick={() => setView("catalog")}>
-                  <span>📦 Catalog</span>
+              {/* Desktop Actions */}
+              <div className="desktop-actions">
+                <div className="action-item" onClick={() => { setOpenStoreId(null); setView("home"); }}>
+                  <span>🏠 Home</span>
                 </div>
-              )}
-
-              {(isCustomer() || isAdmin()) && (
-                <div className="action-item" onClick={() => setView("cart")}>
-                  <div className="cart-icon-wrapper">
-                    <span>🛒 Cart</span>
-                    {cart?.totalItems > 0 && <span className="cart-badge">{cart.totalItems}</span>}
+                
+                {(isCustomer() || isAdmin()) && (
+                  <div className="action-item" onClick={() => setView("catalog")}>
+                    <span>📦 Catalog</span>
                   </div>
-                </div>
-              )}
+                )}
 
-              {(isSeller() || isAdmin()) && (
-                <div className="action-item" onClick={() => setView("seller-dashboard")}>
-                  <span>📊 Dashboard</span>
-                </div>
-              )}
+                {(isCustomer() || isAdmin()) && (
+                  <div className="action-item" onClick={() => setView("cart")}>
+                    <div className="cart-icon-wrapper">
+                      <span>🛒 Cart</span>
+                      {cart?.totalItems > 0 && <span className="cart-badge">{cart.totalItems}</span>}
+                    </div>
+                  </div>
+                )}
 
-              <div className="action-item" onClick={logout}>
-                <span>🚪 Logout</span>
+                {(isSeller() || isAdmin()) && (
+                  <div className="action-item" onClick={() => setView("seller-dashboard")}>
+                    <span>📊 Dashboard</span>
+                  </div>
+                )}
+
+                <div className="action-item" onClick={logout}>
+                  <span>🚪 Logout</span>
+                </div>
               </div>
+
+              {/* Mobile Hamburger Menu Icon */}
+              <button 
+                className={`hamburger-menu ${isMobileMenuOpen ? 'open' : ''}`}
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-navigation"
+              >
+                <span></span>
+                <span></span>
+                <span></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation Drawer */}
+        <div 
+          id="mobile-navigation"
+          className={`mobile-nav-drawer ${isMobileMenuOpen ? 'open' : ''}`}
+          ref={mobileMenuRef}
+        >
+          <div className="mobile-nav-content">
+            <div className="mobile-nav-item" onClick={() => { setOpenStoreId(null); setView("home"); setIsMobileMenuOpen(false); }}>
+              <span className="nav-icon">🏠</span>
+              <span className="nav-text">Home</span>
+            </div>
+            
+            {(isCustomer() || isAdmin()) && (
+              <div className="mobile-nav-item" onClick={() => { setView("catalog"); setIsMobileMenuOpen(false); }}>
+                <span className="nav-icon">📦</span>
+                <span className="nav-text">Catalog</span>
+              </div>
+            )}
+
+            {(isCustomer() || isAdmin()) && (
+              <div className="mobile-nav-item" onClick={() => { setView("cart"); setIsMobileMenuOpen(false); }}>
+                <div className="cart-icon-wrapper">
+                  <span className="nav-icon">🛒</span>
+                  <span className="nav-text">Cart</span>
+                  {cart?.totalItems > 0 && <span className="cart-badge mobile">{cart.totalItems}</span>}
+                </div>
+              </div>
+            )}
+
+            {(isSeller() || isAdmin()) && (
+              <div className="mobile-nav-item" onClick={() => { setView("seller-dashboard"); setIsMobileMenuOpen(false); }}>
+                <span className="nav-icon">📊</span>
+                <span className="nav-text">Dashboard</span>
+              </div>
+            )}
+
+            <div className="mobile-nav-item logout" onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
+              <span className="nav-icon">🚪</span>
+              <span className="nav-text">Logout</span>
             </div>
           </div>
         </div>
@@ -3556,11 +3693,33 @@ export default function VeloceeoMVP() {
         {/* CATALOG */}
         {view === "catalog" && (
           <section className="catalog-layout">
+            {/* FILTER OVERLAY */}
+            {isFilterOpen && (
+              <div 
+                className="mobile-overlay active" 
+                onClick={() => setIsFilterOpen(false)}
+              ></div>
+            )}
+            
             {/* FILTER SIDEBAR */}
-            <aside className="sidebar">
+            <aside 
+              ref={filterRef}
+              className={`sidebar ${isFilterOpen ? 'open' : ''}`}
+              id="filter-sidebar"
+              aria-label="Product filters"
+              role={isFilterOpen ? "dialog" : "complementary"}
+              aria-modal={isFilterOpen ? "true" : "false"}
+            >
               <div className="sidebar-title flex-between">
                 <span>Filters</span>
-                <button className="btn small" onClick={resetFilters}>Reset</button>
+                <div className="flex gap-8">
+                  <button className="btn small" onClick={resetFilters}>Reset</button>
+                  <button 
+                    className="filter-close-btn" 
+                    onClick={() => setIsFilterOpen(false)}
+                    aria-label="Close filters"
+                  >✕</button>
+                </div>
               </div>
 
               <div className="filter-section">
@@ -3627,10 +3786,24 @@ export default function VeloceeoMVP() {
 
             {/* PRODUCT LIST */}
             <div className="catalog-content">
-              <div className="flex-between mb-16">
-                <div>
-                  <h2 className="m-0">Catalog</h2>
-                  <p className="muted tiny">Found {products.length} products</p>
+              <div className="flex-between mb-16 align-center">
+                <div className="flex align-center gap-12">
+                  <button 
+                    className="filter-toggle-btn" 
+                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                    aria-expanded={isFilterOpen}
+                    aria-controls="filter-sidebar"
+                    aria-label="Toggle filters"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                    </svg>
+                    <span className="filter-toggle-text">Filters</span>
+                  </button>
+                  <div>
+                    <h2 className="m-0">Catalog</h2>
+                    <p className="muted tiny">Found {products.length} products</p>
+                  </div>
                 </div>
                 {openStoreId && (
                   <button className="btn" onClick={() => { setOpenStoreId(null); setView("home"); }}>
@@ -3933,7 +4106,6 @@ export default function VeloceeoMVP() {
         @media (max-width:480px) {
           .form-grid { grid-template-columns: 1fr; }
           .login-auth-card { padding: 20px; }
-          .auth-tabs { flex-wrap: wrap; }
         }
 
         /* Review System Styles */
