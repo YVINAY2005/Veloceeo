@@ -100,25 +100,55 @@ export default function VeloceeoMVP() {
     categories: [],
     search: ''
   });
+
+  // Profile state
+  const [profileForm, setProfileForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
+
+  // Sync profile form when user changes
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const mobileMenuRef = useRef(null);
   const filterRef = useRef(null);
+  const profileMenuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // If clicking the toggle buttons, let their own onClick handle it
+      if (event.target.closest('.hamburger-menu') || 
+          event.target.closest('.filter-toggle-btn') || 
+          event.target.closest('.profile-container')) {
+        return;
+      }
+
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
         setIsMobileMenuOpen(false);
       }
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setIsFilterOpen(false);
       }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
     };
-    if (isMobileMenuOpen || isFilterOpen) {
+    if (isMobileMenuOpen || isFilterOpen || showProfileMenu) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMobileMenuOpen, isFilterOpen]);
+  }, [isMobileMenuOpen, isFilterOpen, showProfileMenu]);
   const [brandSearch, setBrandSearch] = useState('');
   const [expandedCategories, setExpandedCategories] = useState({});
 
@@ -1443,7 +1473,6 @@ export default function VeloceeoMVP() {
                 <div className="card login-prompt-card">
                   <h3>Want to review?</h3>
                   <p className="muted small">Only customers who have purchased this product can leave a review.</p>
-                  {!role && <button className="btn small mt-2" onClick={() => setView("home")}>Login as Customer</button>}
                 </div>
               )}
             </div>
@@ -1574,6 +1603,134 @@ export default function VeloceeoMVP() {
       </div>
     );
   };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const endpoint = isCustomer() ? "/customer/me" : isSeller() ? "/seller/me" : "/admin/me";
+      const resp = await apiPatch(endpoint, {
+        name: profileForm.name,
+        phone: profileForm.phone,
+      });
+      
+      // Update local user state
+      const updatedUser = resp.status === 'success' ? resp.data : (resp.user || resp.customer || resp.seller || resp.admin || resp);
+      setUser({ ...user, ...updatedUser });
+      
+      notify("Profile updated successfully!", "success");
+      setView("catalog");
+    } catch (err) {
+      setError(err.message || "Failed to update profile");
+      notify("Update failed: " + (err.message || "Unknown error"), "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderEditProfile = () => (
+    <div className="view-profile-edit fade-in">
+      <div className="card max-w-600 mx-auto">
+        <div className="flex-between mb-24">
+          <h2 className="m-0">Edit Profile</h2>
+          <button className="btn-close" onClick={() => setView("catalog")}>✕</button>
+        </div>
+        
+        <form onSubmit={handleUpdateProfile}>
+          <div className="form-group mb-16">
+            <label className="label">Full Name</label>
+            <input 
+              className="input" 
+              value={profileForm.name} 
+              onChange={(e) => setProfileForm({...profileForm, name: e.target.value})}
+              placeholder="Your full name"
+              required
+            />
+          </div>
+          <div className="form-group mb-16">
+            <label className="label">Email Address</label>
+            <input 
+              className="input muted-input" 
+              value={profileForm.email} 
+              disabled 
+              readOnly
+            />
+            <p className="muted tiny mt-4">Email cannot be changed.</p>
+          </div>
+          <div className="form-group mb-24">
+            <label className="label">Phone Number</label>
+            <input 
+              className="input" 
+              value={profileForm.phone} 
+              onChange={(e) => setProfileForm({...profileForm, phone: e.target.value})}
+              placeholder="e.g. +91 9876543210"
+            />
+          </div>
+          <div className="flex gap-12">
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? "Saving..." : "Save Changes"}
+            </button>
+            <button type="button" className="btn-outline" onClick={() => setView("catalog")}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  const renderAccountSettings = () => (
+    <div className="view-account-settings fade-in">
+      <div className="card max-w-600 mx-auto">
+        <div className="flex-between mb-24">
+          <h2 className="m-0">Account Settings</h2>
+          <button className="btn-close" onClick={() => setView("catalog")}>✕</button>
+        </div>
+        
+        <div className="settings-section mb-32">
+          <h3 className="mb-16">Security</h3>
+          <p className="muted small mb-16">To change your password, we will send a reset link to your registered email address.</p>
+          <button 
+            className="btn-outline" 
+            onClick={async () => {
+              setLoading(true);
+              try {
+                await apiPost("/customer/forgot-password", { email: user.email });
+                notify("Password reset link sent to your email!", "success");
+              } catch (err) {
+                notify("Failed to send reset link: " + err.message, "error");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+          >
+            {loading ? "Sending..." : "Send Password Reset Link"}
+          </button>
+        </div>
+
+        <div className="settings-section pt-24 border-top">
+          <h3 className="mb-16 text-danger">Danger Zone</h3>
+          <p className="muted small mb-16">Permanently delete your account and all associated data. This action cannot be undone.</p>
+          <button 
+            className="btn-outline-danger" 
+            onClick={() => {
+              if(confirm("Are you absolutely sure you want to delete your account? This action cannot be undone.")) {
+                notify("Account deletion requested. Our support team will contact you shortly for verification.", "info");
+              }
+            }}
+          >
+            Delete Account
+          </button>
+        </div>
+
+        <div className="mt-32 pt-16 border-top">
+          <button className="btn-primary" onClick={() => setView("catalog")}>Back to Catalog</button>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderProductModal = () => {
     if (!isProductModalOpen || !selectedProduct) return null;
@@ -1904,7 +2061,6 @@ export default function VeloceeoMVP() {
                     <div className="card login-prompt-card">
                       <h3>Want to review?</h3>
                       <p className="muted small">Only customers who have purchased this product can leave a review.</p>
-                      {!role && <button className="btn small mt-2" onClick={() => setView("home")}>Login as Customer</button>}
                     </div>
                   )}
                 </div>
@@ -3130,7 +3286,7 @@ export default function VeloceeoMVP() {
   return (
     <div className="app">
       <header className="main-header">
-        <div className="container">
+        <div className={view === 'catalog' ? "container-fluid" : "container"}>
           <div className="header-content">
             <div className="header-logo" onClick={() => { setOpenStoreId(null); setView("home"); }}>
               <img src="/logo_veloceeo.jpg" alt="Veloceeo" />
@@ -3175,10 +3331,41 @@ export default function VeloceeoMVP() {
                     <span>📊 Dashboard</span>
                   </div>
                 )}
+              </div>
 
-                <div className="action-item" onClick={logout}>
-                  <span>🚪 Logout</span>
-                </div>
+              {/* Profile Icon and Dropdown */}
+              <div className="profile-container" ref={profileMenuRef}>
+                <button 
+                  className="profile-icon-btn" 
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  aria-label="User Profile"
+                  aria-haspopup="true"
+                  aria-expanded={showProfileMenu}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="user-icon">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </button>
+                
+                {showProfileMenu && (
+                  <div className="profile-dropdown fade-in">
+                    <div className="dropdown-header">
+                      <div className="user-name">{user?.name || role?.toUpperCase()}</div>
+                      <div className="user-email">{user?.email}</div>
+                    </div>
+                    <button className="dropdown-item" onClick={() => { setView("edit-profile"); setShowProfileMenu(false); }}>
+                      <span>👤 Edit Profile</span>
+                    </button>
+                    <button className="dropdown-item" onClick={() => { setView("account-settings"); setShowProfileMenu(false); }}>
+                      <span>⚙️ Account Settings</span>
+                    </button>
+                    <div className="dropdown-divider"></div>
+                    <button className="dropdown-item text-danger" onClick={() => { logout(); setShowProfileMenu(false); }}>
+                      <span>🚪 Logout</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Mobile Hamburger Menu Icon */}
@@ -3233,17 +3420,29 @@ export default function VeloceeoMVP() {
               </div>
             )}
 
-            <div className="mobile-nav-item logout" onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
-              <span className="nav-icon">🚪</span>
-              <span className="nav-text">Logout</span>
-            </div>
+            {role && (
+                <>
+                  <div className="mobile-nav-item" onClick={() => { setView("edit-profile"); setIsMobileMenuOpen(false); }}>
+                    <span className="nav-icon">👤</span>
+                    <span className="nav-text">Edit Profile</span>
+                  </div>
+                  <div className="mobile-nav-item" onClick={() => { setView("account-settings"); setIsMobileMenuOpen(false); }}>
+                    <span className="nav-icon">⚙️</span>
+                    <span className="nav-text">Account Settings</span>
+                  </div>
+                  <div className="mobile-nav-item logout" onClick={() => { logout(); setIsMobileMenuOpen(false); }}>
+                    <span className="nav-icon">🚪</span>
+                    <span className="nav-text">Logout</span>
+                  </div>
+                </>
+              )}
           </div>
         </div>
       </header>
 
       {/* Role and Sub-header */}
       <div className="sub-header">
-        <div className="container flex-between">
+        <div className={view === 'catalog' ? "container-fluid flex-between" : "container flex-between"}>
           <div className="nav-links">
             <span className="nav-link" onClick={() => setView("home")}>Trending</span>
             <span className="nav-link" onClick={() => setView("catalog")}>All Products</span>
@@ -3273,7 +3472,7 @@ export default function VeloceeoMVP() {
         </div>
       )}
 
-      <main className="container">
+      <main className={view === 'catalog' ? "container-fluid" : "container"}>
         {error && (
           <div className="card error-card mb-12">
             <div className="flex-between">
@@ -3835,7 +4034,12 @@ export default function VeloceeoMVP() {
                         onClick={() => openProductDetails(p)}
                       >
                         <div className="product-card-image-wrapper">
-                          <img src={p.image || "/logo_veloceeo.jpg"} className="product-card-img" alt={p.name} />
+                          <img 
+                            src={p.image || "/logo_veloceeo.jpg"} 
+                            className="product-card-img" 
+                            alt={p.name} 
+                            loading="lazy"
+                          />
                           <button 
                             className={`wishlist-toggle ${isWishlisted ? 'active' : ''}`}
                             onClick={(e) => { e.stopPropagation(); toggleWishlist(p); }}
@@ -3846,24 +4050,24 @@ export default function VeloceeoMVP() {
                           {p.stock_quantity > 0 && p.stock_quantity < 10 && <div className="stock-badge low-stock">Only {p.stock_quantity} left</div>}
                         </div>
                         <div className="product-card-content">
-                          <div className="product-brand">{p.brand || seller.name}</div>
-                          <div className="product-title">{p.name}</div>
-                          <div className="product-rating">
-                            <span className="rating-badge">
-                              {Math.round(p.avgRating || p.average_rating || 4.5)} ★
-                            </span>
-                            <span className="muted tiny">({p.reviewCount || p.review_count || 0})</span>
+                          <div className="product-meta-row">
+                            <div className="product-brand">{p.brand || seller.name}</div>
+                            <div className="product-rating">
+                              <span className="rating-badge">
+                                {Math.round(p.avgRating || p.average_rating || 4.5)} ★
+                              </span>
+                            </div>
                           </div>
+                          <div className="product-title">{p.name}</div>
                           <div className="product-price-row">
                             <span className="product-price">₹{p.price_cents ? (p.price_cents/100).toLocaleString() : (p.price || 0).toLocaleString()}</span>
                             {p.old_price && <span className="product-old-price">₹{p.old_price}</span>}
-                            {!p.old_price && <span className="product-old-price">₹{((p.price_cents ? (p.price_cents/100) : (p.price || 0)) * 1.2).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>}
                             <span className="product-discount">20% OFF</span>
                           </div>
                           
-                          <div className="mt-12" onClick={e => e.stopPropagation()}>
+                          <div className="product-card-action" onClick={e => e.stopPropagation()}>
                             <button 
-                              className="btn-primary btn-block btn-small" 
+                              className="btn-primary btn-block btn-xs" 
                               disabled={p.stock_quantity <= 0}
                               onClick={() => addToCart(p, 1)}
                             >
@@ -3962,6 +4166,10 @@ export default function VeloceeoMVP() {
         
         {/* PRODUCT DETAILS */}
         {view === "product-details" && renderProductDetails()}
+
+        {/* PROFILE EDIT & SETTINGS */}
+        {view === "edit-profile" && renderEditProfile()}
+        {view === "account-settings" && renderAccountSettings()}
 
         {/* Product Modal */}
         {renderProductModal()}
