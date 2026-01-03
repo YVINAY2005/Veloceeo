@@ -1027,8 +1027,8 @@ button { font-family: inherit; }
 
 /* Product Details View Enhancement */
 .product-details-view {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
 }
 
 .product-details-card {

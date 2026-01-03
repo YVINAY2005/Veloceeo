@@ -247,6 +247,10 @@ export default function VeloceeoMVP() {
   const applyFilters = async () => {
     try {
       setLoading(true);
+      // If we're not in catalog, switch to it to show results
+      if (view !== 'catalog') {
+        setView('catalog');
+      }
       const params = new URLSearchParams();
       if (activeFilters.search) params.append('name', activeFilters.search);
       if (activeFilters.minPrice) params.append('minPrice', activeFilters.minPrice * 100);
@@ -1132,12 +1136,18 @@ export default function VeloceeoMVP() {
 
     return (
       <div className="product-details-view fade-in">
-        <div className="flex-between mb-24">
-          <button className="btn btn-outline btn-small" onClick={() => {
-            if (openStoreId) setView("catalog");
-            else if (isSeller()) setView("seller-dashboard");
-            else setView("catalog");
-          }}>← Back</button>
+        <div className="flex-between mb-16 align-center">
+          <div className="flex align-center gap-12">
+            <button className="btn btn-outline btn-small" onClick={() => {
+              if (openStoreId) setView("catalog");
+              else if (isSeller()) setView("seller-dashboard");
+              else setView("catalog");
+            }}>← Back</button>
+            <div>
+              <h2 className="m-0">Product Details</h2>
+              <p className="muted tiny">{selectedProduct.brand || "Veloceeo Essentials"}</p>
+            </div>
+          </div>
           
           <div className="flex gap-12">
             <button className="btn btn-outline btn-small" onClick={() => toggleWishlist(selectedProduct)}>
@@ -2682,8 +2692,11 @@ export default function VeloceeoMVP() {
   }, [role]);
 
   useEffect(() => {
-    if (view === "catalog") {
+    if (view === "catalog" || view === "product-details") {
       const delayDebounceFn = setTimeout(async () => {
+        // Only run search if we have a search term or we're already on catalog
+        if (view === "product-details" && !activeFilters.search) return;
+
         try {
           const params = new URLSearchParams();
           if (activeFilters.search) params.append("name", activeFilters.search);
@@ -2694,6 +2707,11 @@ export default function VeloceeoMVP() {
           
           const resp = await apiGet(`/product/search?${params.toString()}`);
           setProducts(resp?.data?.products || []);
+
+          // If we searched from product details, switch to catalog to show results
+          if (view === "product-details" && activeFilters.search) {
+            setView("catalog");
+          }
         } catch (e) {
           console.error("Search failed", e);
         }
@@ -3286,7 +3304,7 @@ export default function VeloceeoMVP() {
   return (
     <div className="app">
       <header className="main-header">
-        <div className={view === 'catalog' ? "container-fluid" : "container"}>
+        <div className={(view === 'catalog' || view === 'product-details') ? "container-fluid" : "container"}>
           <div className="header-content">
             <div className="header-logo" onClick={() => { setOpenStoreId(null); setView("home"); }}>
               <img src="/logo_veloceeo.jpg" alt="Veloceeo" />
@@ -3442,7 +3460,7 @@ export default function VeloceeoMVP() {
 
       {/* Role and Sub-header */}
       <div className="sub-header">
-        <div className={view === 'catalog' ? "container-fluid flex-between" : "container flex-between"}>
+        <div className={(view === 'catalog' || view === 'product-details') ? "container-fluid flex-between" : "container flex-between"}>
           <div className="nav-links">
             <span className="nav-link" onClick={() => setView("home")}>Trending</span>
             <span className="nav-link" onClick={() => setView("catalog")}>All Products</span>
@@ -3472,7 +3490,7 @@ export default function VeloceeoMVP() {
         </div>
       )}
 
-      <main className={view === 'catalog' ? "container-fluid" : "container"}>
+      <main className={(view === 'catalog' || view === 'product-details') ? "container-fluid" : "container"}>
         {error && (
           <div className="card error-card mb-12">
             <div className="flex-between">
