@@ -4311,8 +4311,58 @@ export default function VeloceeoMVP() {
         }
 
         @media (max-width: 768px) {
-          .cart-container { flex-direction: column; }
-          .cart-summary-card { width: 100%; }
+          .cart-card { padding: 12px; }
+          .cart-container { flex-direction: column; gap: 20px; }
+          .cart-summary-card { width: 100%; order: 2; padding: 16px; }
+          .cart-items { order: 1; }
+          .cart-item-row { 
+            position: relative;
+            align-items: flex-start;
+            padding: 12px 0;
+            gap: 12px;
+          }
+          .cart-img { width: 80px; height: 80px; }
+          .cart-item-info { 
+            padding-right: 35px; 
+            flex: 1;
+          }
+          .cart-item-info .product-title { font-size: 14px; margin-bottom: 4px; }
+          .cart-item-qty { 
+            margin-top: 8px;
+            width: fit-content;
+            padding: 2px 6px;
+            position: relative;
+            z-index: 1;
+          }
+          .qty-btn { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+          .cart-item-subtotal { 
+            position: absolute;
+            bottom: 12px;
+            right: 0;
+            font-size: 15px;
+          }
+          .btn-icon.delete { 
+            position: absolute;
+            top: 0;
+            right: -10px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            z-index: 2;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .cart-item-row { gap: 10px; }
+          .cart-img { width: 70px; height: 70px; }
+          .cart-item-info .product-title { font-size: 13px; }
+          .cart-item-subtotal { font-size: 14px; }
+          .card-header h2 { font-size: 18px; }
+          .summary-row.total { font-size: 16px; }
+          .cart-actions .btn { padding: 12px; font-size: 14px; }
         }
         .cart-img{width:72px;height:72px;object-fit:cover;border-radius:6px}
         .cart-body{flex:1}
