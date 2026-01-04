@@ -83,6 +83,110 @@ export const signupService = async (payload: AdminSignupPayload) => {
 };
 
 /**
+ * List all users (Admins, Sellers, Customers)
+ */
+export const listUsersService = async () => {
+  const admins = await prisma.admin.findMany({
+    select: { id: true, email: true, name: true, created_at: true, is_super: true }
+  });
+  const sellers = await prisma.seller.findMany({
+    select: { id: true, email: true, name: true, created_at: true, business_name: true, is_active: true }
+  });
+  const customers = await prisma.customer.findMany({
+    select: { id: true, email: true, name: true, created_at: true, is_active: true }
+  });
+
+  return [
+    ...admins.map(a => ({ ...a, role: 'admin' })),
+    ...sellers.map(s => ({ ...s, role: 'seller' })),
+    ...customers.map(c => ({ ...c, role: 'customer' }))
+  ];
+};
+
+/**
+ * Update a user (Admin, Seller, or Customer)
+ */
+export const updateUserService = async (id: string | number, role: string, payload: any, adminId: number) => {
+  let updated;
+  if (role === 'admin') {
+    updated = await prisma.admin.update({
+      where: { id: Number(id) },
+      data: {
+        name: payload.name,
+        email: payload.email,
+        ...(payload.password && { password: await bcrypt.hash(payload.password, 12) })
+      }
+    });
+  } else if (role === 'seller') {
+    updated = await prisma.seller.update({
+      where: { id: String(id) },
+      data: {
+        name: payload.name,
+        email: payload.email,
+        business_name: payload.business_name,
+        phone: payload.phone,
+        ...(payload.password && { password: await bcrypt.hash(payload.password, 12) })
+      }
+    });
+  } else if (role === 'customer') {
+    updated = await prisma.customer.update({
+      where: { id: Number(id) },
+      data: {
+        name: payload.name,
+        email: payload.email,
+        ...(payload.password && { password: await bcrypt.hash(payload.password, 12) })
+      }
+    });
+  } else {
+    throw new AppError('Invalid role', 400);
+  }
+
+  // Audit log
+  await prisma.auditLog.create({
+    data: {
+      action: 'ADMIN_UPDATE_USER',
+      entity_type: role.toUpperCase(),
+      entity_id: String(id),
+      admin_id: adminId,
+      details: { payload }
+    }
+  });
+
+  return updated;
+};
+
+/**
+ * Delete a user
+ */
+export const deleteUserService = async (id: string | number, role: string, adminId: number) => {
+  if (role === 'admin') {
+    // Prevent self deletion
+    if (Number(id) === adminId) {
+      throw new AppError('Cannot delete yourself', 400);
+    }
+    await prisma.admin.delete({ where: { id: Number(id) } });
+  } else if (role === 'seller') {
+    await prisma.seller.delete({ where: { id: String(id) } });
+  } else if (role === 'customer') {
+    await prisma.customer.delete({ where: { id: Number(id) } });
+  } else {
+    throw new AppError('Invalid role', 400);
+  }
+
+  // Audit log
+  await prisma.auditLog.create({
+    data: {
+      action: 'ADMIN_DELETE_USER',
+      entity_type: role.toUpperCase(),
+      entity_id: String(id),
+      admin_id: adminId
+    }
+  });
+
+  return { success: true };
+};
+
+/**
  * Admin login - ENFORCED: only allowed for ALLOWED_ADMIN_EMAIL
  */
 export const loginService = async (payload: AdminLoginPayload) => {

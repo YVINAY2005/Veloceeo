@@ -101,6 +101,40 @@ export const updateSeller = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
+// User management
+export const listUsers = async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const users = await adminService.listUsersService();
+    return res.json(users);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const updateUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const adminId = Number(req.userId);
+    const { id } = req.params;
+    const { role, ...payload } = req.body;
+    const updated = await adminService.updateUserService(id, role, payload, adminId);
+    return res.json(updated);
+  } catch (err) {
+    return next(err);
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const adminId = Number(req.userId);
+    const { id } = req.params;
+    const { role } = req.query; // Expecting role in query string
+    await adminService.deleteUserService(id, String(role), adminId);
+    return res.status(204).send();
+  } catch (err) {
+    return next(err);
+  }
+};
+
 export const deleteSeller = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const adminId = Number(req.userId);

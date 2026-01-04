@@ -19,6 +19,11 @@ router.get('/sellers/:id', protect, restrictTo('admin'), controller.getSellerByI
 router.patch('/sellers/:id', protect, restrictTo('admin'), controller.updateSeller);
 router.delete('/sellers/:id', protect, restrictTo('admin'), controller.deleteSeller);
 
+// ----- Admin-only user management -----
+router.get('/users', protect, restrictTo('admin'), controller.listUsers);
+router.patch('/users/:id', protect, restrictTo('admin'), controller.updateUser);
+router.delete('/users/:id', protect, restrictTo('admin'), controller.deleteUser);
+
 // ----- Admin analytics & order listing -----
 router.get('/analytics', protect, restrictTo('admin'), controller.getAnalytics);
 router.get('/orders', protect, restrictTo('admin'), controller.getOrders); // optional: supports filters via query

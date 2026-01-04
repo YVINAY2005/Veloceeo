@@ -787,9 +787,8 @@ export default function VeloceeoMVP() {
     if (!window.confirm(`Are you sure you want to delete this ${userRole}?`)) return;
     try {
       setLoading(true);
-      // Dynamic endpoint based on role
-      const endpoint = userRole === 'admin' ? `/admin/${id}` : userRole === 'seller' ? `/admin/sellers/${id}` : `/admin/customers/${id}`;
-      await apiDelete(endpoint);
+      // Use unified admin users endpoint with role in query
+      await apiDelete(`/admin/users/${id}?role=${userRole}`);
       notify("User deleted successfully", "success");
       fetchAdminUsers();
     } catch (e) {
@@ -802,8 +801,8 @@ export default function VeloceeoMVP() {
   const updateUser = async (id, role, data) => {
     try {
       setLoading(true);
-      const endpoint = role === 'admin' ? `/admin/${id}` : role === 'seller' ? `/admin/sellers/${id}` : `/admin/customers/${id}`;
-      const resp = await apiPatch(endpoint, data);
+      // Use unified admin users endpoint with role in body
+      const resp = await apiPatch(`/admin/users/${id}`, { ...data, role });
       if (resp.status === 'success') {
         notify("User updated successfully", "success");
         setEditingUser(null);
