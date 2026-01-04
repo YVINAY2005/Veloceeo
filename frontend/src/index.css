@@ -233,6 +233,152 @@ button { font-family: inherit; }
 }
 
 /* Responsive Grid Improvements */
+/* Admin Dashboard & Responsive Table */
+.admin-dashboard {
+  padding: 8px 0;
+  width: 100%;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 12px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.admin-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .admin-tabs {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    white-space: normal; /* Allow buttons to wrap */
+    gap: 8px;
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 20px;
+  }
+  .admin-tabs .btn {
+    flex: 1;
+    min-width: calc(50% - 8px); /* Two buttons per row or full width */
+    padding: 12px 10px;
+    font-size: 13px;
+    white-space: normal; /* Allow text to wrap if needed */
+    text-align: center;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* If there's an odd number of buttons, make the last one full width */
+  .admin-tabs .btn:last-child:nth-child(odd) {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-dashboard .card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+  }
+  .table-container .table {
+    min-width: 800px !important; /* Force horizontal scroll for data density */
+    width: 100% !important;
+    margin-bottom: 0;
+  }
+  .responsive-table {
+    display: table !important;
+    width: 100% !important;
+  }
+  .responsive-table tbody {
+    display: table-row-group !important;
+  }
+  .responsive-table thead {
+    display: table-header-group !important; /* Show headers for scrollable table */
+  }
+  .responsive-table tr {
+    display: table-row !important;
+    margin-bottom: 0;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+    background: transparent !important;
+  }
+  .responsive-table td {
+    display: table-cell !important;
+    padding: 12px !important;
+    border-bottom: 1px solid #f5f5f5;
+    text-align: left !important;
+    white-space: nowrap !important; /* Keep data on one line for better table scrolling */
+    width: auto !important;
+    justify-content: flex-start !important;
+  }
+  .responsive-table td::before {
+    display: none !important; /* Hide data-labels in scrollable mode */
+  }
+  .mobile-actions {
+     justify-content: flex-end;
+     width: 100%;
+   }
+   .mobile-stack {
+     flex-direction: column;
+   }
+   .mobile-stack .btn, .mobile-stack .btn-primary {
+      width: 100%;
+    }
+    .mobile-grid-1 {
+      grid-template-columns: 1fr !important;
+    }
+    .mobile-actions-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .mobile-actions-grid .btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px 8px;
+      font-size: 14px;
+      min-height: 48px; /* Touch target size */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .list-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+    }
+    .btn, .btn-primary, .btn-danger {
+      min-height: 44px; /* Standard touch target */
+    }
+    .input, select {
+      min-height: 48px;
+    }
+    .admin-dashboard h2 {
+      font-size: 20px;
+    }
+    .admin-dashboard h3 {
+      font-size: 18px;
+    }
+  }
+
 .table-container {
   width: 100%;
   overflow-x: auto;

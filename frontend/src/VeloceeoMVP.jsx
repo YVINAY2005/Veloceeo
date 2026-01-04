@@ -818,14 +818,14 @@ export default function VeloceeoMVP() {
 
   const renderAdminDashboard = () => (
     <div className="admin-dashboard">
-      <div className="flex gap-16 mb-24 border-bottom pb-12">
+      <div className="admin-tabs">
         <button className={`btn ${adminTab === 'sellers' ? 'btn-primary' : ''}`} onClick={() => setAdminTab('sellers')}>Manage Sellers</button>
         <button className={`btn ${adminTab === 'categories' ? 'btn-primary' : ''}`} onClick={() => setAdminTab('categories')}>Manage Categories</button>
         <button className={`btn ${adminTab === 'users' ? 'btn-primary' : ''}`} onClick={() => setAdminTab('users')}>Manage Users</button>
       </div>
 
       {adminTab === 'sellers' && (
-        <div className="grid-2 gap-24">
+        <div className="grid-2 gap-24 mobile-grid-1">
           <div className="card">
             <div className="flex-between mb-12">
               <h2 className="m-0">Create Seller</h2>
@@ -851,7 +851,7 @@ export default function VeloceeoMVP() {
               </div>
             </div>
 
-            <div className="flex gap-12">
+            <div className="flex gap-12 mobile-stack">
               <button className="btn-primary" onClick={() => addSeller(sellerForm)}>Create New Seller</button>
               {(sellerForm.name || sellerForm.email) && (
                 <button className="btn" onClick={() => setSellerForm({ name: "", email: "", password: "", phone: "", pincode: "", address: "" })}>Clear</button>
@@ -882,7 +882,7 @@ export default function VeloceeoMVP() {
                     <div className="muted small">{s.phone} • {s.pincode}</div>
                     <div className="muted tiny">ID: <code>{s.id}</code></div>
                   </div>
-                  <div className="flex gap-8">
+                  <div className="flex gap-8 mobile-actions-grid">
                     <button className="btn small" onClick={() => {
                       setSellerForm({
                         name: `${s.business_name || s.name} (Copy)`,
@@ -919,7 +919,7 @@ export default function VeloceeoMVP() {
             <h2 className="m-0">Category Management</h2>
             <div className="muted small">Categories help customers find products easily.</div>
           </div>
-          <div className="grid-2 gap-24">
+          <div className="grid-2 gap-24 mobile-grid-1">
             <div className="border p-16 rounded">
               <h3 className="mb-12">Add New Category</h3>
               <div className="form-group">
@@ -954,7 +954,7 @@ export default function VeloceeoMVP() {
                         {c.depth > 0 && <span className="muted">{'—'.repeat(c.depth)}</span>}
                         <div className="bold">{c.name}</div>
                       </div>
-                      <div className="flex gap-8">
+                      <div className="flex gap-8 mobile-actions-grid">
                         <button className="btn small" onClick={() => {
                           const newName = window.prompt("Enter new category name:", c.name);
                           if (newName && newName !== c.name) {
@@ -989,7 +989,7 @@ export default function VeloceeoMVP() {
           </div>
           
           <div className="table-container">
-            <table className="table">
+            <table className="table responsive-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -1002,19 +1002,19 @@ export default function VeloceeoMVP() {
               <tbody>
                 {adminUsers.length > 0 ? adminUsers.map(u => (
                   <tr key={`${u.role}-${u.id}`}>
-                    <td>
+                    <td data-label="Name">
                       <div className="bold">{u.name || "N/A"}</div>
                       <div className="muted tiny">ID: {u.id}</div>
                     </td>
-                    <td>{u.email}</td>
-                    <td>
+                    <td data-label="Email">{u.email}</td>
+                    <td data-label="Role">
                       <span className={`badge ${u.role === 'admin' ? 'danger' : u.role === 'seller' ? 'primary' : 'success'}`}>
                         {u.role.toUpperCase()}
                       </span>
                     </td>
-                    <td>{u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</td>
-                    <td>
-                      <div className="flex gap-8">
+                    <td data-label="Joined">{u.created_at ? new Date(u.created_at).toLocaleDateString() : 'N/A'}</td>
+                    <td data-label="Actions">
+                      <div className="flex gap-8 mobile-actions">
                         <button className="btn small" onClick={() => setEditingUser({ ...u })}>Edit</button>
                         <button 
                           className="btn-danger small" 
@@ -1073,7 +1073,7 @@ export default function VeloceeoMVP() {
                   />
                 </>
               )}
-              <div className="flex gap-12 mt-16">
+              <div className="flex gap-12 mt-16 mobile-stack">
                 <button 
                   className="btn-primary flex-1" 
                   onClick={() => updateUser(editingUser.id, editingUser.role, editingUser)}
@@ -3304,7 +3304,7 @@ export default function VeloceeoMVP() {
   return (
     <div className="app">
       <header className="main-header">
-        <div className={(view === 'catalog' || view === 'product-details') ? "container-fluid" : "container"}>
+        <div className={(view === 'catalog' || view === 'product-details' || view === 'admin-dashboard') ? "container-fluid" : "container"}>
           <div className="header-content">
             <div className="header-logo" onClick={() => { setOpenStoreId(null); setView("home"); }}>
               <img src="/logo_veloceeo.jpg" alt="Veloceeo" />
@@ -3460,7 +3460,7 @@ export default function VeloceeoMVP() {
 
       {/* Role and Sub-header */}
       <div className="sub-header">
-        <div className={(view === 'catalog' || view === 'product-details') ? "container-fluid flex-between" : "container flex-between"}>
+        <div className={(view === 'catalog' || view === 'product-details' || view === 'admin-dashboard') ? "container-fluid flex-between" : "container flex-between"}>
           <div className="nav-links">
             <span className="nav-link" onClick={() => setView("home")}>Trending</span>
             <span className="nav-link" onClick={() => setView("catalog")}>All Products</span>
@@ -3490,7 +3490,7 @@ export default function VeloceeoMVP() {
         </div>
       )}
 
-      <main className={(view === 'catalog' || view === 'product-details') ? "container-fluid" : "container"}>
+      <main className={(view === 'catalog' || view === 'product-details' || view === 'admin-dashboard' || (view === 'home' && isAdmin())) ? "container-fluid" : "container"}>
         {error && (
           <div className="card error-card mb-12">
             <div className="flex-between">
