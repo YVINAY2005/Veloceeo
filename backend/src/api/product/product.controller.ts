@@ -68,6 +68,26 @@ export const getFilterMetadata = catchAsync(async (_req: Request, res: Response)
 });
 
 /**
+ * Create a new category
+ * POST /api/product/categories
+ */
+export const createCategory = catchAsync(async (req: Request, res: Response) => {
+  const { name, parentId } = req.body;
+  const category = await productService.createCategory(name, parentId);
+  res.status(201).json({ status: 'success', data: { category } });
+});
+
+/**
+ * Delete a category
+ * DELETE /api/product/categories/:id
+ */
+export const deleteCategory = catchAsync(async (req: Request, res: Response) => {
+  const id = Number(req.params.id);
+  await productService.deleteCategory(id);
+  res.status(200).json({ status: 'success', data: null });
+});
+
+/**
  * Update product stock quantity
  * PATCH /api/products/:id/stock
  */

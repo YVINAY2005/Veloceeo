@@ -12,6 +12,10 @@ router.get('/filters', controller.getFilterMetadata);
 router.get('/store/:storeId', controller.getProductsByStore);
 router.get('/:id', controller.getProductById);
 
+// Category management (Admin only)
+router.post('/categories', protect, restrictTo('admin'), controller.createCategory);
+router.delete('/categories/:id', protect, restrictTo('admin'), controller.deleteCategory);
+
 // Protected routes (requires authentication)
 router.use(protect);
 

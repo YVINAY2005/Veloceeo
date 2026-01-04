@@ -333,6 +333,55 @@ export const getCategoryHierarchy = async () => {
 };
 
 /**
+ * Create a new category
+ */
+export const createCategory = async (name: string, parentId: number | null = null) => {
+  // Check if category with same name exists under same parent
+  const existing = await prisma.category.findFirst({
+    where: { name, parent_id: parentId }
+  });
+  if (existing) throw new AppError('Category with this name already exists in this level', 400);
+
+  // Since Category model requires store_id, we'll use the first store found
+  // or a designated official store. In this schema, categories are linked to stores.
+  const store = await prisma.store.findFirst();
+  if (!store) throw new AppError('No store found to link the category to. Please create a store first.', 400);
+
+  // Generate a simple slug
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+  return await prisma.category.create({
+    data: {
+      name,
+      slug,
+      parent_id: parentId,
+      store_id: store.id
+    }
+  });
+};
+
+/**
+ * Delete a category
+ */
+export const deleteCategory = async (id: number) => {
+  const category = await prisma.category.findUnique({
+    where: { id },
+    include: { subcategories: true, products: true }
+  });
+  if (!category) throw new AppError('Category not found', 404);
+
+  if (category.subcategories.length > 0) {
+    throw new AppError('Cannot delete category with subcategories', 400);
+  }
+
+  if (category.products.length > 0) {
+    throw new AppError('Cannot delete category with linked products', 400);
+  }
+
+  return await prisma.category.delete({ where: { id } });
+};
+
+/**
  * Update product stock quantity
  */
 export const updateProductStock = async (id: number, quantity: number, sellerId?: string) => {
